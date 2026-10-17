@@ -4,6 +4,7 @@ import path from "node:path"
 import { before, describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
 import { pagesUsing } from "../src/deps.js"
+import { writeSiteFiles } from "../src/site.js"
 import { build, loadConfig, renderSite, resolveConfig } from "../src/index.js"
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixture")
@@ -139,6 +140,30 @@ describe("build", () => {
       "Sitemap: https://example.com/sitemap.xml", ""
     ].join("\n"))
     assert.equal(read("CNAME"), "example.com\n")
+  })
+})
+
+describe("site files", () => {
+  /** @param {import("../src/config.js").Config} config */
+  const logOf = async (config) => {
+    const site = { ...resolveConfig(config, ROOT), out: path.join(ROOT, "dist-dev") }
+    fs.mkdirSync(site.out, { recursive: true })
+    /** @type {string[]} */
+    const lines = []
+    const log = console.log
+    console.log = (line) => lines.push(line)
+    try {
+      await writeSiteFiles(site, [])
+    } finally {
+      console.log = log
+    }
+    return lines.join("\n")
+  }
+
+  it("only says it writes what's turned on", async () => {
+    assert.match(await logOf({ domain: "example.com", sitemap: { dates: false } }), /Writing the sitemaps\n.*Done, 0 pages in the sitemap$/)
+    assert.match(await logOf({ domain: "example.com", cname: true, robots: true }), /Writing CNAME and robots\.txt\n.*Done$/)
+    assert.equal(await logOf({ domain: "example.com" }), "")
   })
 })
 

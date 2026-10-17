@@ -1,6 +1,6 @@
 {
   "name": "mothwing",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A small static site builder for pages as light as a moth's wing",
   "keywords": [
     "static-site-generator",

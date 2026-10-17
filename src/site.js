@@ -28,13 +28,15 @@ function lastModified(site, cache, files) {
 }
 
 /**
- * Writes CNAME, the sitemaps and robots.txt.
+ * Writes the CNAME, sitemaps and robots.txt, those the config turned on.
  * @param {import("./config.js").Site} site
  * @param {import("./routes.js").Route[]} routes
  * @param {boolean} [dated] Add each page's lastmod, from git, which takes a moment
  */
 export async function writeSiteFiles(site, routes, dated = true) {
-  log("SITE", "Writing CNAME, the sitemaps and robots.txt")
+  const files = [site.cname && "CNAME", site.sitemap && "the sitemaps", site.robots && "robots.txt"].filter(Boolean)
+  if (!files.length) return
+  log("SITE", `Writing ${files.length > 1 ? `${files.slice(0, -1).join(", ")} and ${files.at(-1)}` : files[0]}`)
 
   // Every GitHub Pages deploy wipes the branch, so the custom domain has to be written each time
   if (site.cname) fs.writeFileSync(path.join(site.out, "CNAME"), site.domain + "\n")
@@ -92,5 +94,5 @@ export async function writeSiteFiles(site, routes, dated = true) {
     ].join("\n"))
   }
 
-  log("SITE", `Done, ${[...sitemaps.values()].flat().length} pages in the sitemap`)
+  log("SITE", site.sitemap ? `Done, ${[...sitemaps.values()].flat().length} pages in the sitemap` : "Done")
 }
