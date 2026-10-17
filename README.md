@@ -8,6 +8,12 @@ mothwing isn't a framework. There are no components, and nothing runs in the bro
 
 I did try them, and others, before making my own. They're good at what they do, but I wanted full control of the output: every byte of HTML exactly as I wrote it, and as few dependencies as possible between my files and the finished pages. mothwing is for when you want the same.
 
+## Built with mothwing
+| Site | Source | |
+| --- | --- | --- |
+| [ffxiv.watch](https://ffxiv.watch) | [AlexFlipnote/ffxiv.watch](https://github.com/AlexFlipnote/ffxiv.watch) | Large: 3000+ pages from game data, code split JS, link preview images, sitemaps per section |
+| [alexflipnote.dev](https://alexflipnote.dev) | [AlexFlipnote/alexflipnote.github.io](https://github.com/AlexFlipnote/alexflipnote.github.io) | Small: a handful of pages, a JSON file and some Markdown docs |
+
 ## Getting started
 ```sh
 npm install --save-dev mothwing
