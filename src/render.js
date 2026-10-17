@@ -31,7 +31,7 @@ import { includeHtml, parseAttrs, parseTemplate, renderNodes } from "./template.
 
 /** @returns {BuildState} */
 export const buildState = () => ({
-  data: { values: {}, files: {} },
+  data: { values: {}, files: {}, sources: {} },
   assetUrls: new Map(),
   templates: new Map(),
   used: new Map(),

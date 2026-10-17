@@ -60,6 +60,13 @@ export default () => ({ year: new Date().getFullYear() })
 <footer>{{ site.year }}</footer>  <!-- into objects with dots -->
 ```
 
+A `.js` file can also say what it reads, relative to `src/`. The pages using it are dated by those files in the sitemap, and render again in dev when they change:
+
+```js
+// src/data/events.js
+export const sources = ["js/data/lodestone.json"]
+```
+
 ## Loops
 ```html
 <ul>
@@ -81,7 +88,7 @@ Every tag is ordinary HTML to an editor or formatter. Templates formatted by Pre
 ## Pages
 `src/pages/about.html` is `/about/`, `src/pages/blog/index.html` is `/blog/`.
 
-`[projects.id].html` makes a page per item of `projects` in the data folder, with its `id` as the URL: `src/pages/projects/[projects.id].html` is `/projects/hexclock/` for `{ "id": "hexclock" }`. The item is `{{ page }}`, and the list links to the pages by the same field, `/projects/{{ project.id }}/`.
+`[projects.id].html` makes a page per item of `projects` in the data folder, with its `id` as the URL: `src/pages/projects/[projects.id].html` is `/projects/hexclock/` for `{ "id": "hexclock" }`. The item is `{{ page }}`, and the list links to the pages by the same field, `/projects/{{ project.id }}/`. An item with a `sources` list is dated by those files instead of the whole data file, so editing one item doesn't date every page.
 
 ### .data.js
 For values that take more than the data folder, a page can have a `.data.js` next to it, whose default export returns them. Its values come before the data folder's:

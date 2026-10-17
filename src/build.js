@@ -51,12 +51,15 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
     for (const [file, content] of Object.entries(route.props.files ?? {})) writeIfChanged(path.join(site.out, file), content)
   }
 
-  // A page that used the data folder is dated by it too
+  // A page that used the data folder is dated by it too, and by what its files say they're made from
   for (const route of routes) {
     if (route.props.page) continue
     for (const name of state.used.get(route.source) ?? []) {
       const file = state.data.files[name]
-      if (file && !(name in route.props) && !route.sources.includes(file)) route.sources.push(file)
+      if (!file || name in route.props) continue
+      for (const source of [file, ...state.data.sources[name] ?? []]) {
+        if (!route.sources.includes(source)) route.sources.push(source)
+      }
     }
   }
   log("HTML", `Done rendering ${routes.length} pages${written < routes.length ? `, ${written} changed` : ""}`)

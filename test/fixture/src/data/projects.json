@@ -8,6 +8,7 @@
   {
     "id": "alexspin",
     "name": "Alex Spin",
-    "about": "It spins"
+    "about": "It spins",
+    "sources": ["css/site.css"]
   }
 ]

@@ -55,10 +55,13 @@ export async function dependencies(site, state, routes) {
     const dataFile = `${pagesDir}/${source.replace(/\.html$/, ".data.js")}`
     if (fs.existsSync(path.join(site.src, dataFile))) (await importsCached(dataFile)).forEach(file => files.add(file))
 
-    for (const name of state.used.get(source) ?? []) {
+    // The data it used, and for a [projects.id].html page the list it's made from
+    const fromData = source.match(/\[([\w.]+)\.\w+\]\.html$/)?.[1].split(".")[0]
+    for (const name of new Set([...state.used.get(source) ?? [], ...fromData ? [fromData] : []])) {
       const file = state.data.files[name]
       if (!file) continue
       files.add(file)
+      state.data.sources[name]?.forEach(input => files.add(input))
       if (file.endsWith(".js")) (await importsCached(file)).forEach(input => files.add(input))
     }
     deps[source] = [...files]

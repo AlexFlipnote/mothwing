@@ -3,7 +3,9 @@ import fs from "node:fs"
 import path from "node:path"
 import { before, describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
+import { loadData } from "../src/data.js"
 import { pagesUsing } from "../src/deps.js"
+import { listRoutes } from "../src/routes.js"
 import { writeSiteFiles } from "../src/site.js"
 import { build, loadConfig, renderSite, resolveConfig } from "../src/index.js"
 
@@ -188,7 +190,16 @@ describe("dev renders", () => {
     assert.deepEqual(deps["index.html"].sort(), ["pages/index.data.js", "pages/index.html", "partials/head.html", "partials/nav.html"])
     assert.ok(deps["projects/index.html"].includes("data/projects.json"))
     assert.ok(deps["projects/index.html"].includes("data/site.js"))
-    assert.deepEqual(deps["projects/[projects.id].html"].sort(), ["data/projects.json", "pages/projects/[projects.id].html"])
+    assert.ok(deps["projects/index.html"].includes("js/main.js"), "data/site.js says it's made from it")
+    assert.deepEqual(deps["projects/[projects.id].html"].sort(), ["css/site.css", "data/projects.json", "pages/projects/[projects.id].html"])
+  })
+
+  it("dates pages by what their data says it's made from", async () => {
+    const site = await loadConfig(ROOT)
+    const data = await loadData(site)
+    assert.deepEqual(data.sources.site, ["js/main.js"])
+    const routes = await listRoutes(site, data, new Set(["projects/[projects.id].html"]))
+    assert.deepEqual(routes.map(route => route.sources), [["data/projects.json"], ["css/site.css"]], "an item can name its own")
   })
 
   it("finds the pages a changed file is in", () => {

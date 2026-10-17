@@ -110,7 +110,8 @@ function pagesFromData(site, siteData, source, list, key) {
   const from = posix(path.relative(site.src, path.join(site.pages, source)))
   const items = lookup(siteData.values, list)
   if (!Array.isArray(items)) throw new Error(`${from}: ${site.data} has no list called ${list}`)
-  const dataFile = siteData.files[list.split(".")[0]]
+  const top = list.split(".")[0]
+  const dataSources = [siteData.files[top], ...siteData.sources[top] ?? []]
 
   const seen = new Set()
   return items.map((item, i) => {
@@ -119,7 +120,9 @@ function pagesFromData(site, siteData, source, list, key) {
     if (seen.has(pageSlug)) throw new Error(`${from}: two of ${list} are both "${pageSlug}"`)
     seen.add(pageSlug)
     const output = source.replace(/\[[\w.]+\]\.html$/, `${pageSlug}/index.html`)
-    // Dated by its data alone, a template tweak would otherwise date every page at once
-    return { source, output, url: outputUrl(output), props: { page: item }, sources: [dataFile] }
+    // Dated by its data alone, a template tweak would otherwise date every page at once. An item can say which of the
+    // data it's made from, so a change to one doesn't date them all
+    const sources = Array.isArray(item.sources) && item.sources.length ? item.sources : dataSources
+    return { source, output, url: outputUrl(output), props: { page: item }, sources }
   })
 }
