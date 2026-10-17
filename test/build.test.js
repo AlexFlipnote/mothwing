@@ -118,7 +118,7 @@ describe("build", () => {
 
   it("fills pages from the data folder, JSON and JS alike", () => {
     const page = read("projects/index.html")
-    assert.ok(page.includes("<li><a href=\"/projects/hexclock/\">Hex Clock</a></li><li><a href=\"/projects/alexspin/\">Alex Spin</a></li>"))
+    assert.ok(page.includes("<li><a href=\"/projects/hexclock/\">Hex Clock</a></li><li><a href=\"/projects/alex_spin/\">Alex Spin</a></li>"))
     assert.ok(page.includes("<footer>2026</footer>"))
     assert.ok(page.includes("Everything Example made"))
     assert.ok(!fs.existsSync(path.join(OUT, "data")), "the data folder isn't copied")
@@ -129,7 +129,7 @@ describe("build", () => {
     assert.ok(hexclock.includes("<h1>Hex Clock</h1>"))
     assert.ok(hexclock.includes("<a href=\"https://example.com/hexclock\">Try it</a>"))
     assert.ok(hexclock.includes("<title>Hex Clock - Example</title>"))
-    assert.ok(!read("projects/alexspin/index.html").includes("Try it"))
+    assert.ok(!read("projects/alex_spin/index.html").includes("Try it"), "an id that's fine in a URL is kept as it is")
   })
 
   it("writes the sitemaps, robots.txt and CNAME", () => {

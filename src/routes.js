@@ -116,7 +116,9 @@ function pagesFromData(site, siteData, source, list, key) {
   const seen = new Set()
   return items.map((item, i) => {
     if (item?.[key] === undefined) throw new Error(`${from}: item ${i} of ${list} has no ${key}`)
-    const pageSlug = slug(String(item[key]))
+    // A value that's fine in a URL already is kept as it is, so existing links like /docs/create_ssh_key/ keep working
+    const value = String(item[key])
+    const pageSlug = /^[\w.-]+$/.test(value) ? value : slug(value)
     if (seen.has(pageSlug)) throw new Error(`${from}: two of ${list} are both "${pageSlug}"`)
     seen.add(pageSlug)
     const output = source.replace(/\[[\w.]+\]\.html$/, `${pageSlug}/index.html`)

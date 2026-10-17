@@ -6,7 +6,7 @@
     "url": "https://example.com/hexclock"
   },
   {
-    "id": "alexspin",
+    "id": "alex_spin",
     "name": "Alex Spin",
     "about": "It spins",
     "sources": ["css/site.css"]
