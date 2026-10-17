@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 import { resolveConfig } from "../src/config.js"
 import { withCsp } from "../src/csp.js"
 import { buildState, renderPage } from "../src/render.js"
-import { fitDescription } from "../src/seo.js"
+import { fitDescription, seoTags } from "../src/seo.js"
 import { fillPlaceholders, includeHtml, parseTemplate, renderNodes } from "../src/template.js"
 
 describe("fillPlaceholders", () => {
@@ -92,6 +92,15 @@ describe("loops and conditions", () => {
     const { html } = run(formatted, { projects })
     assert.ok(!html.includes("x-if") && !html.includes("x-each"), html)
     assert.equal(html.replace(/\s+/g, " "), "<ul> <li> <a href=\"/hexclock/\">Hexclock</a> </li> <li> </li> </ul>")
+  })
+})
+
+describe("seoTags", () => {
+  it("doesn't add the site's name to a title that is it", () => {
+    const site = resolveConfig({ domain: "example.com", seo: { siteName: "Example" } }, process.cwd())
+    const route = { source: "index.html", output: "index.html", url: "/", props: {}, sources: [] }
+    assert.equal(seoTags(site, route, { title: "Example", description: "d" })[0], "<title>Example</title>")
+    assert.equal(seoTags(site, route, { title: "Home", description: "d" })[0], "<title>Home - Example</title>")
   })
 })
 

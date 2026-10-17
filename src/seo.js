@@ -35,8 +35,8 @@ export function seoTags(site, route, attrs) {
   const pageDescription = attr("description")
   if (!pageTitle || !pageDescription) throw new Error(`${route.source}: <x-seo> needs a title and a description`)
   const description = fitDescription(pageDescription, maxDescription)
-  // The front page keeps it, for people searching for the site by its name
-  const named = `${pageTitle} - ${siteName}`
+  // The front page keeps it, for people searching for the site by its name, unless it's the site's name already
+  const named = unescapeHtml(pageTitle) === siteName ? pageTitle : `${pageTitle} - ${siteName}`
   const title = route.url === "/" || unescapeHtml(named).length <= maxTitle ? named : pageTitle
 
   const url = `${site.url}${route.url}`
