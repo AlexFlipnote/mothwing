@@ -1,5 +1,6 @@
-# mothwing
-**Build, don't re-learn.** A small static site builder for pages as light as a moth's wing. Plain HTML in, plain HTML out, with hashed asset links and modulepreloads for code split JS. The rest is there when you ask for it: SEO tags, a Content-Security-Policy that allows only your own inline scripts, sitemaps dated from git, robots.txt and minified HTML.
+<img src="https://raw.githubusercontent.com/AlexFlipnote/mothwing/master/assets/banner-slim.png" alt="mothwing, a moth written as <|>: Write HTML, ship HTML.">
+
+**Write HTML, ship HTML.** A small static site builder for pages as light as a moth's wing, with hashed asset links and modulepreloads for code split JS. The rest is there when you ask for it: SEO tags, a Content-Security-Policy that allows only your own inline scripts, sitemaps dated from git, robots.txt and minified HTML.
 
 It was born as the build script of [ffxiv.watch](https://ffxiv.watch), and got tweaked over time until I was a little too proud of it to keep it there. So it branched out into its own thing, for any site that wants the same.
 

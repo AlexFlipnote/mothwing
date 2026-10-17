@@ -1,7 +1,7 @@
 {
   "name": "mothwing",
   "version": "0.0.4",
-  "description": "A small static site builder for pages as light as a moth's wing",
+  "description": "Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing",
   "keywords": [
     "static-site-generator",
     "ssg",
