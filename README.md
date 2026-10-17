@@ -60,6 +60,13 @@ export default () => ({ year: new Date().getFullYear() })
 <footer>{{ site.year }}</footer>  <!-- into objects with dots -->
 ```
 
+An attribute that's a placeholder and nothing else follows its value: `false` or `null` leaves it out, and `true` makes it a bare attribute.
+
+```html
+<option value="{{ group.slug }}" selected="{{ group.selected }}">  <!-- selected, or nothing -->
+<section hidden="{{ events.none }}">                               <!-- hidden, or nothing -->
+```
+
 A `.js` file can also say what it reads, relative to `src/`. The pages using it are dated by those files in the sitemap, and render again in dev when they change:
 
 ```js

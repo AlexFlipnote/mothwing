@@ -63,7 +63,8 @@ function find(values, name, context) {
 
 /**
  * {{ name }} is filled with the value as text, {{{ name }}} as HTML, on a line of its own each line indented like it.
- * Names can go into objects: {{ project.name }}.
+ * Names can go into objects: {{ project.name }}. An attribute that's one placeholder and nothing else follows its
+ * value: false or null leaves it out, true makes it a bare one, `selected="{{ group.selected }}"` -> `selected`.
  * @param {string} html
  * @param {Record<string, any>} values
  * @param {string} from For errors, the page's file
@@ -72,17 +73,22 @@ function find(values, name, context) {
  */
 export function fillPlaceholders(html, values, from, used = new Set()) {
   /** @param {string} name */
-  const value = (name) => {
-    const found = find(values, name, { from, used })
-    if (found === undefined) throw new Error(`${from}: nothing to fill {{ ${name} }} with`)
-    return String(found)
+  const found = (name) => {
+    const value = find(values, name, { from, used })
+    if (value === undefined) throw new Error(`${from}: nothing to fill {{ ${name} }} with`)
+    return value
   }
 
   // One pass, so what's filled in is never searched for placeholders itself
-  const placeholder = /^([ \t]*)\{\{\{\s*([\w.]+)\s*\}\}\}[ \t]*$|\{\{\{\s*([\w.]+)\s*\}\}\}|\{\{\s*([\w.]+)\s*\}\}/gm
-  return html.replace(placeholder, (_, indent, line, inline, text) => {
-    if (line) return value(line).split("\n").map(l => l.trim() ? indent + l : "").join("\n")
-    return inline ? value(inline) : escapeHtml(value(text))
+  const placeholder = /(\s+)([\w:-]+)="\{\{\s*([\w.]+)\s*\}\}"|^([ \t]*)\{\{\{\s*([\w.]+)\s*\}\}\}[ \t]*$|\{\{\{\s*([\w.]+)\s*\}\}\}|\{\{\s*([\w.]+)\s*\}\}/gm
+  return html.replace(placeholder, (_, space, attr, attrValue, indent, line, inline, text) => {
+    if (attr) {
+      const value = found(attrValue)
+      if (value === false || value === null) return ""
+      return value === true ? `${space}${attr}` : `${space}${attr}="${escapeHtml(String(value))}"`
+    }
+    if (line) return String(found(line)).split("\n").map(l => l.trim() ? indent + l : "").join("\n")
+    return inline ? String(found(inline)) : escapeHtml(String(found(text)))
   })
 }
 

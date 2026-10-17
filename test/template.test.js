@@ -15,6 +15,13 @@ describe("fillPlaceholders", () => {
     assert.equal(fillPlaceholders("{{{ a }}}", { a: "{{ b }}" }, "x"), "{{ b }}")
   })
 
+  it("leaves out an attribute that's false or null, and makes true a bare one", () => {
+    const html = "<option value=\"{{ v }}\" selected=\"{{ on }}\" hidden=\"{{ off }}\" data-x=\"{{ none }}\" title=\"Lv.{{ v }}\">"
+    assert.equal(fillPlaceholders(html, { v: "a&b", on: true, off: false, none: null }, "x"), "<option value=\"a&amp;b\" selected title=\"Lv.a&amp;b\">")
+    assert.equal(fillPlaceholders("<p hidden=\"{{ h }}\">", { h: 0 }, "x"), "<p hidden=\"0\">", "only false and null leave it out")
+    assert.throws(() => fillPlaceholders("<p hidden=\"{{ missing }}\">", {}, "page.html"), /nothing to fill \{\{ missing \}\}/)
+  })
+
   it("fails on a placeholder with nothing to fill it", () => {
     assert.throws(() => fillPlaceholders("{{ missing }}", {}, "page.html"), /page\.html: nothing to fill \{\{ missing \}\}/)
   })
