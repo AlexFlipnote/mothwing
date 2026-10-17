@@ -55,7 +55,8 @@ export const CONFIG_FILE = "mothwing.config.js"
 
 /**
  * @typedef {object} SitemapConfig
- * @property {string[]} [sections] Sections that get a sitemap of their own, the rest share sitemap-pages.xml
+ * @property {string[]} [sections] Sections that get a sitemap of their own behind a sitemap index, the rest share
+ *   sitemap-pages.xml. Without any, sitemap.xml has every page itself
  * @property {boolean} [dates] Date each page by the last git commit to its files. true
  */
 

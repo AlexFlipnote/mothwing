@@ -151,7 +151,7 @@ Off until you turn them on. `true` turns one on as it comes, an object changes h
 | --- | --- | --- |
 | `minify` | Minifies the HTML of production builds | html-minifier-terser options |
 | `csp` | A `<meta>` Content-Security-Policy: only your own files, and your inline scripts by their hash | Directives over the defaults, `{ "style-src": "'self' 'unsafe-inline'" }` |
-| `sitemap` | `sitemap.xml`, each page dated by the last commit to its files | `sections` that get a sitemap each, `dates: false` to leave git out |
+| `sitemap` | `sitemap.xml` with every page, each dated by the last commit to its files | `sections` that get a sitemap each, behind a sitemap index, for big sites. `dates: false` to leave git out |
 | `robots` | `robots.txt` that allows everything, pointing at the sitemap | `block` crawlers by name, `disallow` paths |
 | `cname` | `CNAME` with the domain, for GitHub Pages | |
 | `activeLinks` | `aria-current="page"` on links to the page they're on, `"true"` on links to its section | A function `(href, route)` returning `"page"`, `"section"` or `false`, `undefined` keeps the default |

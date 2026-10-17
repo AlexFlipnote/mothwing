@@ -163,9 +163,37 @@ describe("site files", () => {
   }
 
   it("only says it writes what's turned on", async () => {
-    assert.match(await logOf({ domain: "example.com", sitemap: { dates: false } }), /Writing the sitemaps\n.*Done, 0 pages in the sitemap$/)
+    assert.match(await logOf({ domain: "example.com", sitemap: { dates: false } }), /Writing the sitemap\n.*Done, 0 pages in the sitemap$/)
+    assert.match(await logOf({ domain: "example.com", sitemap: { sections: ["posts"], dates: false } }), /Writing the sitemaps\n/)
     assert.match(await logOf({ domain: "example.com", cname: true, robots: true }), /Writing CNAME and robots\.txt\n.*Done$/)
     assert.equal(await logOf({ domain: "example.com" }), "")
+  })
+
+  it("writes one sitemap without sections, and an index with them", async () => {
+    /** @param {string} url */
+    const route = (url) => ({ source: "x.html", output: "x/index.html", url, props: {}, sources: [] })
+    const routes = [route("/"), route("/about/"), route("/posts/first/")]
+    /** @param {import("../src/config.js").Config} config */
+    const write = async (config) => {
+      const site = { ...resolveConfig(config, ROOT), out: path.join(ROOT, "dist-dev", "sitemaps") }
+      fs.rmSync(site.out, { recursive: true, force: true })
+      fs.mkdirSync(site.out, { recursive: true })
+      const log = console.log
+      console.log = () => {}
+      try {
+        await writeSiteFiles(site, routes, false)
+      } finally {
+        console.log = log
+      }
+      return fs.readdirSync(site.out).sort()
+    }
+
+    assert.deepEqual(await write({ domain: "example.com", sitemap: true }), ["sitemap.xml"])
+    const single = fs.readFileSync(path.join(ROOT, "dist-dev", "sitemaps", "sitemap.xml"), "utf8")
+    assert.ok(single.includes("<urlset") && single.includes("<loc>https://example.com/posts/first/</loc>"))
+
+    assert.deepEqual(await write({ domain: "example.com", sitemap: { sections: ["posts"] } }), ["sitemap-pages.xml", "sitemap-posts.xml", "sitemap.xml"])
+    assert.ok(fs.readFileSync(path.join(ROOT, "dist-dev", "sitemaps", "sitemap.xml"), "utf8").includes("<sitemapindex"))
   })
 })
 

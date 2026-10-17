@@ -34,7 +34,8 @@ function lastModified(site, cache, files) {
  * @param {boolean} [dated] Add each page's lastmod, from git, which takes a moment
  */
 export async function writeSiteFiles(site, routes, dated = true) {
-  const files = [site.cname && "CNAME", site.sitemap && "the sitemaps", site.robots && "robots.txt"].filter(Boolean)
+  const sitemapFiles = site.sitemap && (site.sitemap.sections.length ? "the sitemaps" : "the sitemap")
+  const files = [site.cname && "CNAME", sitemapFiles, site.robots && "robots.txt"].filter(Boolean)
   if (!files.length) return
   log("SITE", `Writing ${files.length > 1 ? `${files.slice(0, -1).join(", ")} and ${files.at(-1)}` : files[0]}`)
 
@@ -45,7 +46,7 @@ export async function writeSiteFiles(site, routes, dated = true) {
   const sitemaps = new Map()
   if (site.sitemap) {
     const cache = new Map()
-    // A sitemap per section behind a sitemap index, so Search Console shows how each one is indexed on its own
+    // With sections, a sitemap per section behind a sitemap index, so Search Console shows how each one is indexed on its own
     for (const route of routes.filter(route => route.source !== site.notFound)) {
       const section = route.url.split("/")[1]
       const name = site.sitemap.sections.includes(section) ? section : "pages"
@@ -72,15 +73,23 @@ export async function writeSiteFiles(site, routes, dated = true) {
      */
     const entry = (tag, loc, lastmod) => `  <${tag}><loc>${loc}</loc>${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}</${tag}>`
 
-    const index = []
-    for (const [name, pages] of sitemaps) {
-      const file = `sitemap-${name}.xml`
-      fs.writeFileSync(path.join(site.out, file), xml("urlset", pages.map(p => entry("url", `${site.url}${p.url}`, p.lastmod))))
-      // YYYY-MM-DD sorts as text, so the newest is the last
-      const newest = pages.map(p => p.lastmod).filter(Boolean).sort().at(-1)
-      index.push(entry("sitemap", `${site.url}/${file}`, newest))
+    /** @param {{ url: string, lastmod: string | null | false }[]} pages */
+    const urlset = (pages) => xml("urlset", pages.map(p => entry("url", `${site.url}${p.url}`, p.lastmod)))
+
+    // Without sections, it's one sitemap.xml with every page, all a small site needs
+    if (!site.sitemap.sections.length) {
+      fs.writeFileSync(path.join(site.out, "sitemap.xml"), urlset(sitemaps.get("pages") ?? []))
+    } else {
+      const index = []
+      for (const [name, pages] of sitemaps) {
+        const file = `sitemap-${name}.xml`
+        fs.writeFileSync(path.join(site.out, file), urlset(pages))
+        // YYYY-MM-DD sorts as text, so the newest is the last
+        const newest = pages.map(p => p.lastmod).filter(Boolean).sort().at(-1)
+        index.push(entry("sitemap", `${site.url}/${file}`, newest))
+      }
+      fs.writeFileSync(path.join(site.out, "sitemap.xml"), xml("sitemapindex", index))
     }
-    fs.writeFileSync(path.join(site.out, "sitemap.xml"), xml("sitemapindex", index))
   }
 
   if (site.robots) {
