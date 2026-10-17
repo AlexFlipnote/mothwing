@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="Home" description="{{ description }}"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <h1>{{ title }}</h1>
+    <x-shout text="hello"/>
+    <script>document.documentElement.dataset.js = ""</script>
+    <x-js src="/js/main.js"/>
+  </body>
+</html>

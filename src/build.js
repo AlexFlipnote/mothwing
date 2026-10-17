@@ -1,0 +1,104 @@
+import fs from "fs"
+import { minify } from "html-minifier-terser"
+import path from "path"
+import { buildJS, buildSass, clean, copyAssets } from "./assets.js"
+import { withCsp } from "./csp.js"
+import { loadData } from "./data.js"
+import { dependencies } from "./deps.js"
+import { log } from "./log.js"
+import { buildState, renderPage } from "./render.js"
+import { listRoutes } from "./routes.js"
+import { writeSiteFiles } from "./site.js"
+
+/**
+ * Writes a file unless it already has this content. Writing is much slower than reading on Windows, and a dev render
+ * of a whole site mostly writes what's already there.
+ * @param {string} file
+ * @param {string} content
+ * @returns {boolean} Whether it was written
+ */
+export function writeIfChanged(file, content) {
+  try {
+    if (fs.readFileSync(file, "utf8") === content) return false
+  } catch {
+    fs.mkdirSync(path.dirname(file), { recursive: true })
+  }
+  fs.writeFileSync(file, content)
+  return true
+}
+
+/**
+ * @param {import("./config.js").Site} site
+ * @param {import("./render.js").BuildState} state
+ * @param {{ hashed?: boolean, only?: Set<string> }} [options] `hashed` for production: hashed asset links and minified
+ *   HTML. `only` renders just these pages, relative to the pages folder
+ * @returns {Promise<import("./routes.js").Route[]>} The pages rendered
+ */
+export async function buildHTML(site, state, { hashed = true, only } = {}) {
+  log("HTML", only ? `Rendering ${[...only].join(", ")}...` : "Rendering pages...")
+  state.assetUrls.clear()
+  state.templates.clear()
+  state.used.clear()
+  state.data = await loadData(site)
+
+  const routes = await listRoutes(site, state.data, only)
+  let written = 0
+  for (const route of routes) {
+    const html = renderPage(site, state, route, hashed)
+    const finished = hashed && site.minify ? await minify(html, site.minify) : html
+    if (writeIfChanged(path.join(site.out, route.output), site.csp ? withCsp(site.csp, finished) : finished)) written++
+
+    for (const [file, content] of Object.entries(route.props.files ?? {})) writeIfChanged(path.join(site.out, file), content)
+  }
+
+  // A page that used the data folder is dated by it too
+  for (const route of routes) {
+    if (route.props.page) continue
+    for (const name of state.used.get(route.source) ?? []) {
+      const file = state.data.files[name]
+      if (file && !(name in route.props) && !route.sources.includes(file)) route.sources.push(file)
+    }
+  }
+  log("HTML", `Done rendering ${routes.length} pages${written < routes.length ? `, ${written} changed` : ""}`)
+  return routes
+}
+
+/**
+ * @param {import("./config.js").Site} site
+ * @param {import("./routes.js").Route[]} routes
+ * @param {boolean} dev
+ */
+async function runAfter(site, routes, dev) {
+  for (const hook of site.after) await hook({ site, routes, dev })
+}
+
+/**
+ * Renders the pages into an existing build, as dev does after a change. With `only`, just those pages, and the
+ * sitemaps are left as they are.
+ * @param {import("./config.js").Site} site
+ * @param {{ only?: Set<string> }} [options]
+ * @returns {Promise<Record<string, string[]>>} What each page rendered is made from, see deps.js
+ */
+export async function renderSite(site, { only } = {}) {
+  const state = buildState()
+  const routes = await buildHTML(site, state, { hashed: false, only })
+  if (!only) await writeSiteFiles(site, routes, false)
+  await runAfter(site, routes, true)
+  return dependencies(site, state, routes)
+}
+
+/**
+ * The production build, from an empty build folder.
+ * @param {import("./config.js").Site} site
+ */
+export async function build(site) {
+  const state = buildState()
+  await clean(site)
+  await copyAssets(site)
+  await buildJS(site, state)
+  await buildSass(site)
+  // After JS and CSS, since the ?v=hash is made from the built files
+  const routes = await buildHTML(site, state)
+  await writeSiteFiles(site, routes)
+  await runAfter(site, routes, false)
+}

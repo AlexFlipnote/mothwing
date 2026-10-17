@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <x-seo title="{{ page.name }}" description="{{ page.about }}"/>
+  </head>
+  <body>
+    <h1>{{ page.name }}</h1>
+    <x-if value="page.url">
+      <a href="{{ page.url }}">Try it</a>
+    </x-if>
+  </body>
+</html>

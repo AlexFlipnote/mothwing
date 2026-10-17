@@ -1,0 +1,73 @@
+{
+  "name": "mothwing",
+  "version": "0.0.1",
+  "description": "A small static site builder for pages as light as a moth's wing",
+  "keywords": [
+    "static-site-generator",
+    "ssg",
+    "html",
+    "esbuild",
+    "csp",
+    "sitemap"
+  ],
+  "author": "AlexFlipnote",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/AlexFlipnote/mothwing.git"
+  },
+  "homepage": "https://github.com/AlexFlipnote/mothwing#readme",
+  "bugs": {
+    "url": "https://github.com/AlexFlipnote/mothwing/issues"
+  },
+  "type": "module",
+  "bin": {
+    "mothwing": "bin/mothwing.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./types/index.d.ts",
+      "default": "./src/index.js"
+    },
+    "./html": {
+      "types": "./types/html.d.ts",
+      "default": "./src/html.js"
+    }
+  },
+  "files": [
+    "bin",
+    "src",
+    "types"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js",
+    "lint": "eslint .",
+    "types": "tsc src/index.js src/html.js --allowJs --declaration --emitDeclarationOnly --module nodenext --moduleResolution nodenext --target es2022 --strict --types node --skipLibCheck --outDir types",
+    "prepack": "npm run types",
+    "typecheck": "tsc -p jsconfig.json"
+  },
+  "dependencies": {
+    "@types/html-minifier-terser": "^7.0.2",
+    "esbuild": "0.28.1",
+    "html-minifier-terser": "7.2.0"
+  },
+  "peerDependencies": {
+    "sass": "^1.93.3"
+  },
+  "peerDependenciesMeta": {
+    "sass": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.5",
+    "globals": "^16.5.0",
+    "sass": "^1.105.2",
+    "typescript": "^6.0.3"
+  }
+}
