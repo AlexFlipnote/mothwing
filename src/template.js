@@ -10,6 +10,26 @@ import { posix } from "./log.js"
 export const parseAttrs = (attrs) => Object.fromEntries([...attrs.matchAll(/([\w-]+)(?:="([^"]*)")?/g)].map(([, name, value]) => [name, value ?? true]))
 
 /**
+ * Indents every line of some HTML, but those inside a <pre> or <textarea>, whose spaces are part of what they show.
+ * Empty lines are left empty.
+ * @param {string} html
+ * @param {string} indent
+ * @returns {string}
+ */
+export function indentHtml(html, indent) {
+  /** @type {string | null} The tag the line starts inside of */
+  let inside = null
+  return html.split("\n").map(line => {
+    const indented = inside || !line.trim() ? line : indent + line
+    for (const [, close, tag] of line.matchAll(/<(\/?)(pre|textarea)\b/gi)) {
+      if (!close && !inside) inside = tag.toLowerCase()
+      else if (close && inside === tag.toLowerCase()) inside = null
+    }
+    return indented
+  }).join("\n")
+}
+
+/**
  * Pastes in the <x-html src="..."/> partials. One on a line of its own is indented like its tag, so partials are
  * written unindented.
  * @param {string} src The source folder, partials are relative to it
@@ -32,7 +52,7 @@ export function includeHtml(src, html, from, used = new Set(), depth = 0) {
     const content = includeHtml(src, fs.readFileSync(partial, "utf8"), file, used, depth + 1).trimEnd()
     const lineStart = offset === 0 || page[offset - 1] === "\n"
     if (!lineStart) return space + content
-    return content.split("\n").map(line => line.trim() ? space + line : "").join("\n")
+    return indentHtml(content, space)
   })
 }
 
@@ -87,14 +107,14 @@ export function fillPlaceholders(html, values, from, used = new Set()) {
       if (value === false || value === null) return ""
       return value === true ? `${space}${attr}` : `${space}${attr}="${escapeHtml(String(value))}"`
     }
-    if (line) return String(found(line)).split("\n").map(l => l.trim() ? indent + l : "").join("\n")
+    if (line) return indentHtml(String(found(line)), indent)
     return inline ? String(found(inline)) : escapeHtml(String(found(text)))
   })
 }
 
 /**
- * A page's HTML split at its <x-each> and <x-if> blocks.
- * @typedef {{ type: "text", text: string }
+ * A page's HTML split at its <x-each> and <x-if> blocks. A text that's `lineStart` begins a line of the page.
+ * @typedef {{ type: "text", text: string, lineStart: boolean }
  *   | { type: "x-each" | "x-if", attrs: Record<string, string | true>, dedent: number, children: Node[] }} Node
  */
 
@@ -119,12 +139,18 @@ export function parseTemplate(html, from) {
   /** @type {Node[]} */
   const root = []
   const children = () => open.at(-1)?.node.children ?? root
+  /**
+   * @param {number} from
+   * @param {number} to
+   * @returns {Node}
+   */
+  const text = (from, to) => ({ type: "text", text: html.slice(from, to), lineStart: from === 0 || html[from - 1] === "\n" })
   let last = 0
 
   for (const match of html.matchAll(BLOCK)) {
     const [whole, lineIndent, lineOpen, lineAttrs, lineClose, inlineOpen, inlineAttrs, inlineClose] = match
     const start = match.index ?? 0
-    if (start > last) children().push({ type: "text", text: html.slice(last, start) })
+    if (start > last) children().push(text(last, start))
     last = start + whole.length
 
     const opening = lineOpen ?? inlineOpen
@@ -144,16 +170,18 @@ export function parseTemplate(html, from) {
   }
 
   if (open.length) throw new Error(`${from}: <${open[0].node.type}> is never closed`)
-  if (last < html.length) root.push({ type: "text", text: html.slice(last) })
+  if (last < html.length) root.push(text(last, html.length))
   return root
 }
 
 /**
- * @param {string} text
+ * @param {Node & { type: "text" }} node
  * @param {number} spaces
- * @returns {string} Every line with up to `spaces` of its indent taken off
+ * @returns {string} Its text with up to `spaces` of each line's indent taken off, its first line only when it begins one
  */
-const dedent = (text, spaces) => spaces ? text.replace(new RegExp(`^[ \\t]{1,${spaces}}`, "gm"), "") : text
+const dedent = (node, spaces) => spaces
+  ? node.text.replace(new RegExp(`${node.lineStart ? "^" : "(?<=\\n)"}[ \\t]{1,${spaces}}`, "gm"), "")
+  : node.text
 
 /**
  * @param {any} value
@@ -168,9 +196,11 @@ const truthy = (value) => Array.isArray(value) ? value.length > 0 : Boolean(valu
  * @param {Node[]} nodes
  * @param {Record<string, any>} values
  * @param {Context} context
+ * @param {number} [dedentBy] Spaces taken off each line of the blocks' own HTML, before it's filled, so what's filled
+ *   in keeps its indent, the inside of a <pre> included
  * @returns {string}
  */
-export function renderNodes(nodes, values, context) {
+export function renderNodes(nodes, values, context, dedentBy = 0) {
   const { from } = context
 
   /**
@@ -187,7 +217,7 @@ export function renderNodes(nodes, values, context) {
   }
 
   return nodes.map(node => {
-    if (node.type === "text") return fillPlaceholders(node.text, values, from, context.used)
+    if (node.type === "text") return fillPlaceholders(dedent(node, dedentBy), values, from, context.used)
 
     const { attrs } = node
     if (node.type === "x-each") {
@@ -198,16 +228,16 @@ export function renderNodes(nodes, values, context) {
       for (const [attr, name] of Object.entries({ as, index })) {
         if (typeof name === "string" && !/^\w+$/.test(name)) throw new Error(`${from}: <x-each ${attr}="${name}"> names what's looped over, a plain name like ${attr}="${attr === "as" ? "project" : "i"}"`)
       }
-      return dedent(items.map((item, i) => renderNodes(node.children, {
+      return items.map((item, i) => renderNodes(node.children, {
         ...values,
         [as]: item,
         ...typeof index === "string" && { [index]: i }
-      }, context)).join(""), node.dedent)
+      }, context, dedentBy + node.dedent)).join("")
     }
 
     const name = attrs.value ?? attrs.not
     if (typeof name !== "string") throw new Error(`${from}: <x-if> needs value="..." or not="..."`)
     const shown = truthy(known("x-if", attrs.value !== undefined ? "value" : "not", name)) === (attrs.value !== undefined)
-    return shown ? dedent(renderNodes(node.children, values, context), node.dedent) : ""
+    return shown ? renderNodes(node.children, values, context, dedentBy + node.dedent) : ""
   }).join("")
 }

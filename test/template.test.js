@@ -11,6 +11,11 @@ describe("fillPlaceholders", () => {
     assert.equal(fillPlaceholders("<ul>\n  {{{ items }}}\n</ul>", { items: "<li>a</li>\n<li>b</li>" }, "x"), "<ul>\n  <li>a</li>\n  <li>b</li>\n</ul>")
   })
 
+  it("leaves the lines inside a <pre> or <textarea> as they are", () => {
+    const code = "<p>a</p>\n<pre><code>if (x) {\n  y()\n}</code></pre>\n<textarea>\n  b</textarea>\n<p>c</p>"
+    assert.equal(fillPlaceholders("<main>\n  {{{ code }}}\n</main>", { code }, "x"), "<main>\n  <p>a</p>\n  <pre><code>if (x) {\n  y()\n}</code></pre>\n  <textarea>\n  b</textarea>\n  <p>c</p>\n</main>")
+  })
+
   it("never fills what it filled in", () => {
     assert.equal(fillPlaceholders("{{{ a }}}", { a: "{{ b }}" }, "x"), "{{ b }}")
   })
@@ -41,6 +46,11 @@ describe("loops and conditions", () => {
   it("repeats a block per item, leaving no empty lines and the indent it would have by hand", () => {
     const html = "<ul>\n  <x-each items=\"projects\" as=\"project\">\n    <li>{{ project.name }}</li>\n  </x-each>\n</ul>"
     assert.equal(run(html, { projects }).html, "<ul>\n  <li>Hexclock</li>\n  <li>Tom &amp; Jerry</li>\n</ul>")
+  })
+
+  it("takes the indent off its own HTML, never off what's filled in", () => {
+    const html = "<div>\n  <x-each items=\"blocks\" as=\"b\">\n    <x-if value=\"b\">\n      <pre>{{{ b }}}</pre>\n      {{{ b }}}\n    </x-if>\n  </x-each>\n</div>"
+    assert.equal(run(html, { blocks: ["a\n    b"] }).html, "<div>\n  <pre>a\n    b</pre>\n  a\n      b\n</div>")
   })
 
   it("works inline too", () => {
