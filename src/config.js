@@ -19,8 +19,9 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {JsConfig} [js] The JS to bundle
  * @property {Record<string, string>} [sass] Sass to compile, source to output: { "scss/index.scss": "css/index.css" }
  * @property {string[]} [exclude] Folders left out of the build, on top of pages, partials and data: ["js", "scss"]
- * @property {string[]} [rerender] Folders the pages read with fs, whose changes render every page again in dev. What
- *   the pages import, include or use from the data folder is followed on its own
+ * @property {string[]} [rerender] Folders and files the pages read with fs, whose changes render every page again in
+ *   dev. They can be outside src, "../README.md", and are watched too. What the pages import, include or use from the
+ *   data folder is followed on its own
  * @property {SeoConfig} [seo] For <x-seo>
  * @property {boolean | import("html-minifier-terser").Options} [minify] Minify the HTML of production builds
  * @property {boolean | Record<string, string>} [csp] A Content-Security-Policy <meta> that allows only the site's own
@@ -93,7 +94,7 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {Required<JsConfig>} js
  * @property {Record<string, string>} sass
  * @property {string[]} exclude Folders, with pages, partials and data
- * @property {string[]} rerender Folders
+ * @property {string[]} rerender Folders and files, relative to src as "js/data" and "../README.md"
  * @property {Required<SeoConfig>} seo
  * @property {import("html-minifier-terser").Options | false} minify
  * @property {Record<string, string> | false} csp
@@ -174,7 +175,8 @@ export function resolveConfig(config, root) {
     },
     sass: config.sass ?? {},
     exclude: [...new Set([pages, "partials", data, ...config.exclude ?? []])],
-    rerender: config.rerender ?? [],
+    // As dev compares them to what changed: "./js/data/" -> "js/data"
+    rerender: (config.rerender ?? []).map(dir => path.posix.normalize(dir.replaceAll("\\", "/")).replace(/\/$/, "")),
     seo: {
       siteName: config.domain,
       locale: "en_US",

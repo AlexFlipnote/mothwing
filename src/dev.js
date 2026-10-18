@@ -118,10 +118,9 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
   const pagesDir = posix(path.relative(site.src, site.pages))
   /** @type {NodeJS.Timeout | undefined} */
   let restart
-  fs.watch(site.src, { recursive: true }, (_, filename) => {
-    if (!filename) return
-    const file = path.join(site.src, filename)
-    const relative = posix(filename)
+  /** @param {string} file Absolute path */
+  const changed = (file) => {
+    const relative = posix(path.relative(site.src, file))
     if (!fs.existsSync(file)) {
       clearTimeout(restart)
       restart = setTimeout(() => rebuildAll().catch(err => log("WATCH", err.message)), 200)
@@ -131,15 +130,29 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
 
     const page = relative.startsWith(`${pagesDir}/`) && relative.slice(pagesDir.length + 1).replace(/\.data\.js$/, ".html")
     const using = pagesUsing(deps, relative)
+    const rerender = site.rerender.some(dir => relative === dir || relative.startsWith(`${dir}/`))
     if (/\.(scss|sass)$/.test(file))
-      buildSass(site).catch(err => log("CSS", err.message))
+      // Sass the pages are made from too, like a CSS framework's docs, renders them once the CSS is built
+      buildSass(site).then(() => rerender && render("all")).catch(err => log("CSS", err.message))
     else if (page && page.endsWith(".html"))
       render([page])
     else if (using.length)
       render(using)
-    else if (site.rerender.some(dir => relative === dir || relative.startsWith(`${dir}/`)))
+    else if (rerender)
       render("all")
     else if (!isExcluded(site, file))
       copyAssets(site).catch(err => log("ASSET", err.message))
-  })
+  }
+
+  fs.watch(site.src, { recursive: true }, (_, filename) => filename && changed(path.join(site.src, filename)))
+  // What's in src is watched already, rerender can also name files and folders outside it
+  for (const dir of site.rerender.filter(dir => dir.startsWith("../"))) {
+    const watched = path.join(site.src, dir)
+    if (!fs.existsSync(watched)) throw new Error(`rerender: can't find ${dir}`)
+    if (fs.statSync(watched).isDirectory()) {
+      fs.watch(watched, { recursive: true }, (_, filename) => filename && changed(path.join(watched, filename)))
+    } else {
+      fs.watch(watched, () => changed(watched))
+    }
+  }
 }
