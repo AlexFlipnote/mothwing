@@ -34,6 +34,8 @@ src/
   ...              everything else is copied as it is
 ```
 
+The folder names are only defaults, `pages`, `partials` and `data` can each be renamed in the config.
+
 ```js
 import { defineConfig } from "mothwing"
 
@@ -144,11 +146,12 @@ Only `domain` is needed. Folders are relative to `src/`.
 | --- | --- | --- |
 | `src`, `out` | `"src"`, `"dist"` | Relative to the config |
 | `pages` | `"pages"` | |
+| `partials` | `"partials"` | Isn't copied to the build. `<x-html>` takes a partial from anywhere in `src/`, this is only the folder left out |
 | `data` | `"data"` | Its files are in every page, it isn't copied to the build |
 | `notFound` | `"404.html"` | Kept in the build's root, out of the sitemap |
 | `js` | | `scripts` are bundled on their own, `modules` together, sharing their common code in chunks. `chunks` sets the chunks' folder, next to the modules by default |
 | `sass` | `{}` | Sass to compile, `{ "scss/index.scss": "css/index.css" }`, needs `sass` installed |
-| `exclude` | `[]` | Folders left out of the build, like the JS sources: `["js"]`. Pages and partials always are |
+| `exclude` | `[]` | Folders left out of the build, like the JS sources: `["js"]`. Pages, partials and data always are |
 | `rerender` | `[]` | Folders and files your `.data.js` reads with `fs`, whose changes render every page in dev. They can be outside `src`, like `"../README.md"`, and are watched too, Sass in them builds the CSS first. What pages import, include or use from the data folder is followed on its own |
 | `seo` | | For `<x-seo>`: `siteName`, `locale`, `image` (the default preview), `maxTitle`, `maxDescription` |
 | `esbuild` | `{}` | esbuild options for every bundle |

@@ -189,4 +189,9 @@ describe("resolveConfig", () => {
   it("puts the chunks next to the modules", () => {
     assert.equal(resolveConfig({ domain: "example.com", js: { modules: ["js/a.js"] } }, process.cwd()).js.chunks, "js/chunks")
   })
+
+  it("leaves a renamed partials folder out of the build", () => {
+    const site = resolveConfig({ domain: "example.com", partials: "components" }, process.cwd())
+    assert.deepEqual(site.exclude, ["pages", "components", "data"])
+  })
 })

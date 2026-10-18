@@ -13,6 +13,8 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {string} [src] The source folder, relative to the config. "src"
  * @property {string} [out] The build folder, relative to the config. "dist"
  * @property {string} [pages] The pages folder. "pages"
+ * @property {string} [partials] The partials folder, left out of the build. <x-html> takes a partial from anywhere in
+ *   src, this is only the folder that isn't copied. "partials"
  * @property {string} [data] The data folder, its files are in every page by their name: projects.json -> {{ projects }}.
  *   "data"
  * @property {string} [notFound] The 404 page, in the pages folder. Kept in the build's root, out of the sitemap. "404.html"
@@ -70,7 +72,15 @@ export const CONFIG_FILE = "mothwing.config.js"
 /**
  * Returns the HTML a tag turns into. A list is one line each, indented like the tag.
  * @typedef {(tag: { attrs: Record<string, string | true>, route: import("./routes.js").Route, site: Site }) => string | string[]} TagFunction
+ */
+
+/**
+ * Run on every page's HTML once its placeholders are filled, returns the HTML to write.
  * @typedef {(html: string, route: import("./routes.js").Route, site: Site) => string} Transform
+ */
+
+/**
+ * Run once the pages are written, `dev` is true on dev renders.
  * @typedef {(build: { site: Site, routes: import("./routes.js").Route[], dev: boolean }) => any} Hook
  */
 
@@ -89,6 +99,7 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {string} src
  * @property {string} out
  * @property {string} pages
+ * @property {string} partials Relative to src
  * @property {string} data Relative to src
  * @property {string} notFound
  * @property {Required<JsConfig>} js
@@ -109,8 +120,8 @@ export const CONFIG_FILE = "mothwing.config.js"
  */
 
 const OPTIONS = [
-  "domain", "src", "out", "pages", "data", "notFound", "js", "sass", "exclude", "rerender", "seo", "minify", "csp", "sitemap",
-  "robots", "cname", "activeLinks", "tags", "transforms", "after", "esbuild"
+  "domain", "src", "out", "pages", "partials", "data", "notFound", "js", "sass", "exclude", "rerender", "seo", "minify", "csp",
+  "sitemap", "robots", "cname", "activeLinks", "tags", "transforms", "after", "esbuild"
 ]
 
 const DEFAULT_CSP = {
@@ -156,6 +167,7 @@ export function resolveConfig(config, root) {
 
   const src = path.resolve(root, config.src ?? "src")
   const pages = config.pages ?? "pages"
+  const partials = config.partials ?? "partials"
   const data = config.data ?? "data"
   const modules = config.js?.modules ?? []
 
@@ -166,6 +178,7 @@ export function resolveConfig(config, root) {
     src,
     out: path.resolve(root, config.out ?? "dist"),
     pages: path.join(src, pages),
+    partials,
     data,
     notFound: config.notFound ?? "404.html",
     js: {
@@ -174,7 +187,7 @@ export function resolveConfig(config, root) {
       chunks: config.js?.chunks ?? (modules.length ? path.posix.join(path.posix.dirname(modules[0]), "chunks") : "chunks")
     },
     sass: config.sass ?? {},
-    exclude: [...new Set([pages, "partials", data, ...config.exclude ?? []])],
+    exclude: [...new Set([pages, partials, data, ...config.exclude ?? []])],
     // As dev compares them to what changed: "./js/data/" -> "js/data"
     rerender: (config.rerender ?? []).map(dir => path.posix.normalize(dir.replaceAll("\\", "/")).replace(/\/$/, "")),
     seo: {
