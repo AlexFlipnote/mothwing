@@ -1,0 +1,131 @@
+@use "sass:color";
+@use "sass:math";
+
+// The logo's colours, assets/logo.svg
+$antenna: #ff4442;
+$body: #14bae4;
+
+// A mix of the two, rounded to whole channels so it's written as hex, not rgb() in fractions of a percent
+@function mix($a, $b, $weight) {
+  $mixed: color.mix($a, $b, $weight);
+  @return rgb(
+    math.round(color.channel($mixed, "red", $space: rgb)),
+    math.round(color.channel($mixed, "green", $space: rgb)),
+    math.round(color.channel($mixed, "blue", $space: rgb))
+  );
+}
+
+$width: 52rem;
+$mobile: 40rem;
+$mono: ui-monospace, Consolas, monospace;
+
+// The rest are the body's colour, shaded down to a background and mixed up to text
+:root {
+  color-scheme: dark;
+  --bg: #{mix($body, #000, 9%)};
+  --surface: #{mix($body, #000, 16%)};
+  --line: #{mix($body, #000, 28%)};
+  --fg: #{mix($body, #fff, 8%)};
+  --muted: #{mix($body, #9aa, 30%)};
+  --code: #{mix($body, #fff, 55%)};
+  --brand: #{$body};
+  --accent: #{$antenna};
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, sans-serif;
+}
+
+a {
+  color: var(--accent);
+  text-underline-offset: .15em;
+
+  &:hover { color: color.scale($antenna, $lightness: 25%); }
+}
+
+::selection { background: color.change($antenna, $alpha: .35); }
+
+nav, main {
+  max-width: $width;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+nav {
+  display: flex;
+  gap: 1.25rem;
+  padding-block: 1rem;
+  border-bottom: 1px solid var(--line);
+
+  a {
+    color: var(--fg);
+    text-decoration: none;
+
+    &:hover, &[aria-current] { color: var(--accent); }
+  }
+
+  .brand { color: var(--brand); font-weight: 700; margin-right: auto; }
+}
+
+main { padding-block: 1.5rem 4rem; }
+
+h1 { margin: 0 0 .5rem; }
+h2 { margin-top: 2rem; font-size: 1.1rem; color: var(--brand); }
+
+code, pre { font-family: $mono; font-size: .9em; }
+code { color: var(--code); }
+:not(pre) > code { background: var(--surface); padding: .1em .3em; border-radius: 4px; }
+a code { color: inherit; }
+
+pre {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--brand);
+  padding: 1rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  white-space: pre-wrap;
+}
+
+.kind, .from, .optional { color: var(--muted); font-size: .85rem; }
+p.kind { margin: 0; text-transform: uppercase; letter-spacing: .05em; color: var(--brand); }
+.optional { display: block; font-weight: 400; }
+
+table { width: 100%; border-collapse: collapse; }
+
+th, td {
+  text-align: left;
+  vertical-align: top;
+  padding: .5rem .75rem .5rem 0;
+  border-top: 1px solid var(--line);
+}
+
+th { white-space: nowrap; }
+td:nth-child(2) { width: 35%; }
+
+@media (max-width: $mobile) {
+  tr { display: grid; border-top: 1px solid var(--line); padding: .5rem 0; }
+
+  th, td { border: 0; padding: .1rem 0; width: auto !important; }
+}
+
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+
+  img { flex: none; width: 96px; height: 96px; }
+  h1 { margin: 0; font-size: 2.5rem; line-height: 1.1; }
+}
+
+.exports {
+  dt { margin-top: 1rem; }
+  dd { margin: 0; color: var(--muted); }
+}

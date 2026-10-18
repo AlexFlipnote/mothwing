@@ -42,5 +42,10 @@ export default [
     languageOptions: { globals: globals.browser }
   },
 
-  { ignores: ["eslint.config.js", "test/fixture/dist/", "test/fixture/dist-bare/", "test/fixture/dist-dev/", "types/"] }
+  {
+    ignores: [
+      "eslint.config.js", "docs/dist/", "test/fixture/dist/",
+      "test/fixture/dist-bare/", "test/fixture/dist-dev/", "types/"
+    ]
+  }
 ]

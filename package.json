@@ -16,7 +16,7 @@
     "type": "git",
     "url": "git+https://github.com/AlexFlipnote/mothwing.git"
   },
-  "homepage": "https://github.com/AlexFlipnote/mothwing#readme",
+  "homepage": "https://mothwing.dev",
   "bugs": {
     "url": "https://github.com/AlexFlipnote/mothwing/issues"
   },
@@ -47,7 +47,9 @@
     "lint": "eslint .",
     "types": "tsc src/index.js src/html.js --allowJs --declaration --emitDeclarationOnly --module nodenext --moduleResolution nodenext --target es2022 --strict --types node --skipLibCheck --outDir types",
     "prepack": "npm run types",
-    "typecheck": "tsc -p jsconfig.json"
+    "typecheck": "tsc -p jsconfig.json",
+    "docs": "node bin/mothwing.js build --root docs",
+    "docs:dev": "node bin/mothwing.js dev --root docs"
   },
   "dependencies": {
     "@types/html-minifier-terser": "^7.0.2",

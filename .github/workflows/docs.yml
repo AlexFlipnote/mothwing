@@ -1,0 +1,50 @@
+name: Build and deploy the docs
+
+on:
+  push:
+    branches:
+      - master
+    # The docs are read from the source and README too, not only docs/
+    paths:
+      - "docs/**"
+      - "src/**"
+      - "assets/**"
+      - "README.md"
+      - "package.json"
+      - ".github/workflows/docs.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: docs
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+        with:
+          # The whole history, the sitemap's lastmod comes from when each page's source last changed
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build the docs
+        run: npm run docs
+
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: docs/dist
+          clean: true

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="API" description="Everything the mothwing package exports, read from its source"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <main>
+      <h1>API</h1>
+      <p>What <code>mothwing</code> and <code>mothwing/html</code> export, for scripts that build a site themselves and for typing <code>mothwing.config.js</code>.</p>
+      <dl class="exports">
+        <x-each items="api" as="item">
+          <dt><a href="/api/{{ item.slug }}/"><code>{{ item.name }}</code></a> <span class="kind">{{ item.kindName }}</span></dt>
+          <dd>{{ item.summary }}</dd>
+        </x-each>
+      </dl>
+    </main>
+  </body>
+</html>

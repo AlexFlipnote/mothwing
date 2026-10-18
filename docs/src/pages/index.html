@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="mothwing" description="Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <main>
+      <header class="hero">
+        <img src="/images/logo.png" alt="" width="96" height="96">
+        <div>
+          <h1>mothwing</h1>
+        </div>
+      </header>
+      <div class="intro">
+        {{{ readme.intro }}}
+      </div>
+      <h2>Getting started</h2>
+      <pre><code>npm install --save-dev mothwing
+npx mothwing dev     # serves on http://localhost:8080
+npx mothwing build   # production build into dist/</code></pre>
+      <p>Every option and function is in the <a href="/api/">API reference</a>, read from mothwing's own source as this site builds.</p>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="{{ page.name }}" description="{{ page.summary }}" section="API" name="{{ page.name }}"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <main>
+      <p class="kind">{{ page.kindName }}</p>
+      <h1><code>{{ page.name }}</code></h1>
+      <p class="from">
+        From
+        <x-each items="page.modules" as="module">
+          <code>{{ module }}</code>
+        </x-each>
+        · <a href="https://github.com/AlexFlipnote/mothwing/blob/master/{{ page.file }}#L{{ page.line }}">{{ page.file }}:{{ page.line }}</a>
+      </p>
+      <x-if value="page.description">
+        <p>{{{ page.description }}}</p>
+      </x-if>
+
+      <x-each items="page.signatures" as="sig">
+        <pre class="signature"><code>{{{ sig.code }}}</code></pre>
+        <x-if value="sig.params">
+          <h2>Parameters</h2>
+          <table>
+            <x-each items="sig.params" as="param">
+              <tr>
+                <th><code>{{ param.name }}</code><x-if value="param.optional"><span class="optional">optional</span></x-if></th>
+                <td><code>{{{ param.type }}}</code></td>
+                <td>{{{ param.description }}}</td>
+              </tr>
+            </x-each>
+          </table>
+        </x-if>
+        <h2>Returns</h2>
+        <p><code>{{{ sig.returns }}}</code> {{{ sig.returnsDescription }}}</p>
+      </x-each>
+
+      <x-if value="page.properties">
+        <h2>Properties</h2>
+        <table>
+          <x-each items="page.properties" as="prop">
+            <tr>
+              <th><code>{{ prop.name }}</code><x-if value="prop.optional"><span class="optional">optional</span></x-if></th>
+              <td><code>{{{ prop.type }}}</code></td>
+              <td>{{{ prop.description }}}</td>
+            </tr>
+          </x-each>
+        </table>
+      </x-if>
+    </main>
+  </body>
+</html>
