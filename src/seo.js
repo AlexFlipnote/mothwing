@@ -30,13 +30,16 @@ export function seoTags(site, route, attrs) {
     const value = attrs[name]
     return typeof value === "string" ? value : undefined
   }
-  const { siteName, locale, maxTitle, maxDescription } = site.seo
+  const { maxTitle, maxDescription } = site.seo
+  // The config's text as HTML, like the tag's attributes
+  const siteName = escapeHtml(site.seo.siteName)
+  const locale = escapeHtml(site.seo.locale)
   const pageTitle = attr("title")
   const pageDescription = attr("description")
   if (!pageTitle || !pageDescription) throw new Error(`${route.source}: <x-seo> needs a title and a description`)
   const description = fitDescription(pageDescription, maxDescription)
   // The front page keeps it, for people searching for the site by its name, unless it's the site's name already
-  const named = unescapeHtml(pageTitle) === siteName ? pageTitle : `${pageTitle} - ${siteName}`
+  const named = unescapeHtml(pageTitle) === site.seo.siteName ? pageTitle : `${pageTitle} - ${siteName}`
   const title = route.url === "/" || unescapeHtml(named).length <= maxTitle ? named : pageTitle
 
   const url = `${site.url}${route.url}`
@@ -52,7 +55,7 @@ export function seoTags(site, route, attrs) {
 
   // Lets Google show the site's name in results, it only reads this from the front page
   const siteNameLd = route.url === "/"
-    ? [jsonLd({ "@context": "https://schema.org", "@type": "WebSite", name: siteName, url })]
+    ? [jsonLd({ "@context": "https://schema.org", "@type": "WebSite", name: site.seo.siteName, url })]
     : []
 
   // section="Gathering" name="Cedar Log" shows as site › Gathering › Cedar Log in results
@@ -74,7 +77,7 @@ export function seoTags(site, route, attrs) {
   const [width, height] = (attr("image-size") ?? "").split("x").map(Number)
   const image = attr("image")
     ? { src: `${site.url}${attr("image")}`, width, height, alt: attr("image-alt") ?? "" }
-    : site.seo.image && { ...site.seo.image, src: `${site.url}${site.seo.image.src}` }
+    : site.seo.image && { ...site.seo.image, src: `${site.url}${escapeHtml(site.seo.image.src)}`, alt: escapeHtml(site.seo.image.alt) }
   // A wide image shows across the whole preview, a square one as a thumbnail next to the text
   const card = image && image.width > image.height ? "summary_large_image" : "summary"
 

@@ -112,6 +112,16 @@ describe("seoTags", () => {
     assert.equal(seoTags(site, route, { title: "Example", description: "d" })[0], "<title>Example</title>")
     assert.equal(seoTags(site, route, { title: "Home", description: "d" })[0], "<title>Home - Example</title>")
   })
+
+  it("escapes the config's text, which isn't HTML like the tag's", () => {
+    const image = { src: "/logo.png", width: 512, height: 512, alt: "A \"moth\" as <|>" }
+    const site = resolveConfig({ domain: "example.com", seo: { siteName: "Tom & \"Jerry\"", image } }, process.cwd())
+    const route = { source: "about.html", output: "about/index.html", url: "/about/", props: {}, sources: [] }
+    const tags = seoTags(site, route, { title: "About", description: "d", name: "About" })
+    assert.equal(tags[0], "<title>About - Tom &amp; &quot;Jerry&quot;</title>")
+    assert.ok(tags.includes("<meta property=\"og:image:alt\" content=\"A &quot;moth&quot; as &lt;|&gt;\">"))
+    assert.ok(tags.at(-1)?.includes("\"name\":\"Tom & \\\"Jerry\\\"\""), "the breadcrumbs' JSON has it as text")
+  })
 })
 
 describe("fitDescription", () => {
