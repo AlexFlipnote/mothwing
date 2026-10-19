@@ -127,19 +127,6 @@ td:nth-child(2) { width: 35%; }
   h1 { margin: 0; font-size: 2.5rem; line-height: 1.1; }
 }
 
-// Code blocks in the README and examples, highlighted by highlight.js in docs/src/lib/markdown.js
-.hljs {
-  .hljs-keyword, .hljs-meta { color: var(--accent); }
-  .hljs-string, .hljs-number, .hljs-literal, .hljs-regexp { color: var(--literal); }
-  .hljs-comment { color: var(--muted); font-style: italic; }
-  .hljs-tag, .hljs-name, .hljs-built_in { color: var(--brand); }
-  .hljs-attr, .hljs-property, .hljs-params { color: var(--type); }
-  .hljs-title, .hljs-variable { color: var(--fg); }
-  .hljs-template-variable, .hljs-subst { color: var(--code); }
-}
-
-// Linked to by #, from other examples and the README
-h2[id], h3[id] { scroll-margin-top: 1rem; }
 h3 { margin-top: 1.5rem; font-size: 1rem; }
 
 // The examples' list, a title and its first paragraph each
