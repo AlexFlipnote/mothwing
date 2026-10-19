@@ -32,7 +32,8 @@ export function writeIfChanged(file, content) {
  * @param {import("./render.js").BuildState} state
  * @param {{ hashed?: boolean, only?: Set<string> }} [options] `hashed` for production: hashed asset links and minified
  *   HTML. `only` renders just these pages, relative to the pages folder
- * @returns {Promise<import("./routes.js").Route[]>} The pages rendered
+ * @returns {Promise<{ routes: import("./routes.js").Route[], written: number }>} The pages rendered, and how many of
+ *   them and their files were written
  */
 export async function buildHTML(site, state, { hashed = true, only } = {}) {
   log("HTML", only ? `Rendering ${[...only].join(", ")}...` : "Rendering pages...")
@@ -43,12 +44,15 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
 
   const routes = await listRoutes(site, state.data, only)
   let written = 0
+  let files = 0
   for (const route of routes) {
     const html = renderPage(site, state, route, hashed)
     const finished = hashed && site.minify ? await minify(html, site.minify) : html
     if (writeIfChanged(path.join(site.out, route.output), site.csp ? withCsp(site.csp, finished) : finished)) written++
 
-    for (const [file, content] of Object.entries(route.props.files ?? {})) writeIfChanged(path.join(site.out, file), content)
+    for (const [file, content] of Object.entries(route.props.files ?? {})) {
+      if (writeIfChanged(path.join(site.out, file), content)) files++
+    }
   }
 
   // A page that used the data folder is dated by it too, and by what its files say they're made from
@@ -63,7 +67,7 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
     }
   }
   log("HTML", `Done rendering ${routes.length} pages${written < routes.length ? `, ${written} changed` : ""}`)
-  return routes
+  return { routes, written: written + files }
 }
 
 /**
@@ -80,14 +84,15 @@ async function runAfter(site, routes, dev) {
  * sitemaps are left as they are.
  * @param {import("./config.js").Site} site
  * @param {{ only?: Set<string> }} [options]
- * @returns {Promise<Record<string, string[]>>} What each page rendered is made from, see deps.js
+ * @returns {Promise<{ deps: Record<string, string[]>, written: number }>} What each page rendered is made from, see
+ *   deps.js, and how many of the pages and their files were written, the rest were as they are
  */
 export async function renderSite(site, { only } = {}) {
   const state = buildState()
-  const routes = await buildHTML(site, state, { hashed: false, only })
+  const { routes, written } = await buildHTML(site, state, { hashed: false, only })
   if (!only) await writeSiteFiles(site, routes, false)
   await runAfter(site, routes, true)
-  return dependencies(site, state, routes)
+  return { deps: await dependencies(site, state, routes), written }
 }
 
 /**
@@ -101,7 +106,7 @@ export async function build(site) {
   await buildJS(site, state)
   await buildSass(site)
   // After JS and CSS, since the ?v=hash is made from the built files
-  const routes = await buildHTML(site, state)
+  const { routes } = await buildHTML(site, state)
   await writeSiteFiles(site, routes)
   await runAfter(site, routes, false)
 }

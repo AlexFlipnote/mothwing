@@ -25,9 +25,9 @@ const commands = {
   clean: (site) => clean(site),
   html: async (site) => {
     const pages = flag("pages")
-    const deps = await renderSite(site, { only: pages ? new Set(pages.split(",")) : undefined })
-    // Run by dev, which keeps track of what the pages are made from
-    process.send?.({ deps })
+    const rendered = await renderSite(site, { only: pages ? new Set(pages.split(",")) : undefined })
+    // Run by dev, which keeps track of what the pages are made from, and reloads the browser if any changed
+    process.send?.(rendered)
   }
 }
 const command = commands[process.argv[2]]

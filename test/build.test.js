@@ -1,11 +1,13 @@
 import assert from "node:assert/strict"
 import fs from "node:fs"
 import path from "node:path"
-import { before, describe, it } from "node:test"
+import { after, before, describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
+import esbuild from "esbuild"
 import { loadData } from "../src/data.js"
 import { pagesUsing } from "../src/deps.js"
 import { listRoutes } from "../src/routes.js"
+import { serve } from "../src/serve.js"
 import { writeSiteFiles } from "../src/site.js"
 import { build, loadConfig, renderSite, resolveConfig } from "../src/index.js"
 
@@ -208,7 +210,7 @@ describe("dev renders", () => {
     const log = console.log
     console.log = () => {}
     try {
-      deps = await renderSite(await devSite())
+      deps = (await renderSite(await devSite())).deps
     } finally {
       console.log = log
     }
@@ -241,9 +243,68 @@ describe("dev renders", () => {
     console.log = () => {}
     try {
       const only = await renderSite(await devSite(), { only: new Set(["about.html", "projects/index.html"]) })
-      assert.deepEqual(Object.keys(only), ["projects/index.html"], "about.html doesn't exist, so it's skipped")
+      assert.deepEqual(Object.keys(only.deps), ["projects/index.html"], "about.html doesn't exist, so it's skipped")
+      assert.equal(only.written, 0, "rendered the same as before, so nothing is written")
     } finally {
       console.log = log
     }
+  })
+})
+
+describe("dev server", () => {
+  /** @type {import("esbuild").BuildContext} */
+  let context
+  /** @type {Awaited<ReturnType<typeof serve>>} */
+  let served
+  let url = ""
+
+  before(async () => {
+    const site = await devSite()
+    const log = console.log
+    console.log = () => {}
+    try {
+      await renderSite(site)
+    } finally {
+      console.log = log
+    }
+    fs.mkdirSync(path.join(site.out, "no-page"), { recursive: true })
+    context = await esbuild.context({})
+    served = await serve(site, context, { host: "127.0.0.1", port: 0 })
+    url = `http://127.0.0.1:${/** @type {import("node:net").AddressInfo} */ (served.server.address()).port}`
+  })
+
+  after(async () => {
+    served.server.closeAllConnections()
+    served.server.close()
+    await context.dispose()
+  })
+
+  /** @param {string} page */
+  const open = (page) => fetch(url + page, { headers: { accept: "text/html" } })
+
+  it("puts the reload script in every page", async () => {
+    const res = await open("/")
+    assert.equal(res.status, 200)
+    assert.match(await res.text(), /<script src="\/__mothwing\/reload.js"><\/script>\n<\/body>/)
+  })
+
+  it("answers what isn't there with the 404 page", async () => {
+    for (const page of ["/nope/", "/no-page/"]) {
+      const res = await open(page)
+      assert.equal(res.status, 404, page)
+      assert.match(await res.text(), /<title>Not found/, page)
+    }
+    const image = await fetch(`${url}/nope.png`)
+    assert.deepEqual([image.status, await image.text()], [404, "404 - Not Found"], "only pages get the 404 page")
+  })
+
+  it("sends the pages open a reload", async () => {
+    const res = await fetch(`${url}/__mothwing/reload`)
+    const reader = /** @type {ReadableStream<Uint8Array>} */ (res.body).getReader()
+    await reader.read()
+    served.reload()
+    const { value } = await reader.read()
+    assert.match(new TextDecoder().decode(value), /event: reload/)
+    await reader.cancel()
   })
 })

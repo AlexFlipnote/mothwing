@@ -9,6 +9,7 @@ import { buildSass, clean, copyAssets, isExcluded, jsBuilds } from "./assets.js"
 import { renderSite } from "./build.js"
 import { pagesUsing } from "./deps.js"
 import { log, posix } from "./log.js"
+import { serve } from "./serve.js"
 
 const CLI = fileURLToPath(new URL("../bin/mothwing.js", import.meta.url))
 
@@ -28,14 +29,27 @@ const lanAddresses = () => Object.values(os.networkInterfaces()).flatMap((list) 
   .filter((i) => i.family === "IPv4" && !i.internal)
   .map((i) => i.address)
 
-/** @type {import("esbuild").Plugin} */
-const jsWatchPlugin = {
+/**
+ * @param {() => void} changed Called after a build without errors whose files changed
+ * @returns {import("esbuild").Plugin}
+ */
+const jsWatchPlugin = (changed) => ({
   name: "watch-log",
   setup(build) {
+    build.initialOptions.metafile = true
+    let last = ""
     build.onStart(() => log("JS", "Building JS..."))
-    build.onEnd(result => log("JS", result.errors.length ? "Error" : "Done building"))
+    build.onEnd(result => {
+      log("JS", result.errors.length ? "Error" : "Done building")
+      if (result.errors.length) return
+      // The server builds again on every request for the JS, which mustn't reload the page that asked
+      const files = Object.keys(result.metafile?.inputs ?? {})
+      const stamp = files.map(file => `${file}:${fs.existsSync(file) ? fs.statSync(file).mtimeMs : 0}`).join("\n")
+      if (stamp !== last) changed()
+      last = stamp
+    })
   }
-}
+})
 
 /**
  * Builds, serves and rebuilds what changes.
@@ -45,10 +59,12 @@ const jsWatchPlugin = {
 export async function dev(site, { host = "localhost", port = 8080 } = {}) {
   log("WATCH", "Starting to watch for changes...")
 
+  /** Reloads the pages open in a browser, once they're served */
+  let reload = () => {}
   const contexts = await Promise.all(jsBuilds(site, {
     minify: false,
     sourcemap: true,
-    plugins: [jsWatchPlugin]
+    plugins: [jsWatchPlugin(() => reload())]
   }).map(build => esbuild.context(build)))
 
   // The port first, so a second dev server stops here, before it wipes the files the running one serves
@@ -64,12 +80,11 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
   await copyAssets(site)
   await buildSass(site)
   // What each page is made from, so a change renders just the pages it's in
-  let deps = await renderSite(site)
+  let { deps } = await renderSite(site)
 
   // Served only now: a tab left open asks for the page at once, and the server builds the JS for it, which would
   // land in the folder while it's being wiped
-  const server = contexts[0] ?? await esbuild.context({})
-  await server.serve({ servedir: site.out, host, port })
+  reload = (await serve(site, contexts[0] ?? await esbuild.context({}), { host, port })).reload
   await Promise.all(contexts.map(ctx => ctx.watch()))
   const hosts = host === "0.0.0.0" ? ["localhost", ...lanAddresses()] : [host]
   for (const name of hosts) log("SERVE", `http://${name}:${port}/`)
@@ -88,11 +103,15 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     pending = null
     const only = job === "all" ? [] : ["--pages", [...job].join(",")]
     rendering = spawn(process.execPath, [CLI, "html", "--root", site.root, ...only], { stdio: ["inherit", "inherit", "inherit", "ipc"] })
-    rendering.on("message", (/** @type {{ deps?: Record<string, string[]> }} */ message) => {
+    let changed = false
+    rendering.on("message", (/** @type {{ deps?: Record<string, string[]>, written?: number }} */ message) => {
       if (message.deps) deps = job === "all" ? message.deps : { ...deps, ...message.deps }
+      // The after hooks can write what isn't counted, like preview images
+      changed = Boolean(message.written) || site.after.length > 0
     })
-    rendering.on("exit", () => {
+    rendering.on("exit", (code) => {
       rendering = null
+      if (code === 0 && changed) reload()
       startRender()
     })
   }
@@ -133,7 +152,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     const rerender = site.rerender.some(dir => relative === dir || relative.startsWith(`${dir}/`))
     if (/\.(scss|sass)$/.test(file))
       // Sass the pages are made from too, like a CSS framework's docs, renders them once the CSS is built
-      buildSass(site).then(() => rerender && render("all")).catch(err => log("CSS", err.message))
+      buildSass(site).then(() => rerender ? render("all") : reload()).catch(err => log("CSS", err.message))
     else if (page && page.endsWith(".html"))
       render([page])
     else if (using.length)
@@ -141,7 +160,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     else if (rerender)
       render("all")
     else if (!isExcluded(site, file))
-      copyAssets(site).catch(err => log("ASSET", err.message))
+      copyAssets(site).then(reload).catch(err => log("ASSET", err.message))
   }
 
   fs.watch(site.src, { recursive: true }, (_, filename) => filename && changed(path.join(site.src, filename)))
