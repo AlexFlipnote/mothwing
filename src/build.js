@@ -1,11 +1,11 @@
 import fs from "fs"
-import { minify } from "html-minifier-terser"
 import path from "path"
 import { buildJS, buildSass, clean, copyAssets } from "./assets.js"
 import { withCsp } from "./csp.js"
 import { loadData } from "./data.js"
 import { dependencies } from "./deps.js"
 import { log } from "./log.js"
+import { minifyHtml } from "./minify.js"
 import { buildState, renderPage } from "./render.js"
 import { listRoutes } from "./routes.js"
 import { writeSiteFiles } from "./site.js"
@@ -47,7 +47,7 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
   let files = 0
   for (const route of routes) {
     const html = renderPage(site, state, route, hashed)
-    const finished = hashed && site.minify ? await minify(html, site.minify) : html
+    const finished = hashed && site.minify ? await minifyHtml(html).catch(error => { throw new Error(`${route.source}: ${error.message}`) }) : html
     if (writeIfChanged(path.join(site.out, route.output), site.csp ? withCsp(site.csp, finished) : finished)) written++
 
     for (const [file, content] of Object.entries(route.props.files ?? {})) {

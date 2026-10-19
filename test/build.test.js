@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url"
 import esbuild from "esbuild"
 import { loadData } from "../src/data.js"
 import { pagesUsing } from "../src/deps.js"
+import { minifyHtml } from "../src/minify.js"
 import { listRoutes } from "../src/routes.js"
 import { serve } from "../src/serve.js"
 import { writeSiteFiles } from "../src/site.js"
@@ -79,6 +80,12 @@ describe("build", () => {
   it("escapes {{ }} and leaves {{{ }}} as HTML", () => {
     assert.ok(read("index.html").includes("Tom &amp; Jerry &lt;3"))
     assert.ok(read("posts/first/index.html").includes("<p>One</p><p>Two</p>"))
+  })
+
+  it("minifies to HTML that minifying again leaves as it is", async () => {
+    const pages = fs.readdirSync(OUT, { recursive: true }).map(String).filter(file => file.endsWith(".html"))
+    assert.ok(pages.length > 5)
+    for (const file of pages) assert.equal(await minifyHtml(read(file)), read(file), file)
   })
 
   it("links the assets with a hash", () => {

@@ -26,7 +26,8 @@ export const CONFIG_FILE = "mothwing.config.js"
  *   dev. They can be outside src, "../README.md", and are watched too, Sass in them builds the CSS first. What the pages
  *   import, include or use from the data folder is followed on its own
  * @property {SeoConfig} [seo] For <x-seo>
- * @property {boolean | import("html-minifier-terser").Options} [minify] Minify the HTML of production builds
+ * @property {boolean} [minify] Minify the HTML of production builds: comments and the whitespace that doesn't show are
+ *   taken out, and esbuild minifies the inline scripts and styles. The tags and their attributes stay as written
  * @property {boolean | Record<string, string>} [csp] A Content-Security-Policy <meta> that allows only the site's own
  *   files, and its inline scripts by their hash. An object sets directives over the defaults:
  *   { "style-src": "'self' 'unsafe-inline'" }
@@ -107,7 +108,6 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {string[]} exclude Folders left out of the build, with pages, partials and data
  * @property {Required<JsConfig>} js The JS to bundle
  * @property {Required<SeoConfig>} seo For <x-seo>
- * @property {import("html-minifier-terser").Options | false} minify Minify the HTML of production builds
  * @property {Record<string, string> | false} csp The Content-Security-Policy's directives
  * @property {Required<SitemapConfig> | false} sitemap sitemap.xml
  * @property {Required<RobotsConfig> | false} robots robots.txt
@@ -135,13 +135,6 @@ const DEFAULT_CSP = {
   "form-action": "'none'"
 }
 
-const DEFAULT_MINIFY = {
-  collapseWhitespace: true,
-  removeComments: true,
-  minifyJS: true,
-  minifyCSS: true
-}
-
 /**
  * @template T
  * @param {boolean | T | undefined} value
@@ -166,6 +159,8 @@ export function resolveConfig(config, root) {
   if (!config?.domain) throw new Error(`${CONFIG_FILE}: needs a domain`)
   const unknown = Object.keys(config).filter(key => !OPTIONS.includes(key))
   if (unknown.length) throw new Error(`${CONFIG_FILE}: unknown option ${unknown.map(key => `"${key}"`).join(", ")}, the options are ${OPTIONS.join(", ")}`)
+  // It took html-minifier-terser's options until 0.1.0, which would be on without them otherwise
+  if (typeof config.minify === "object") throw new Error(`${CONFIG_FILE}: minify is true or false, mothwing minifies the HTML itself`)
 
   const src = path.resolve(root, config.src ?? "src")
   const pages = config.pages ?? "pages"
@@ -200,7 +195,7 @@ export function resolveConfig(config, root) {
       maxDescription: 160,
       ...config.seo
     },
-    minify: config.minify ? { ...DEFAULT_MINIFY, ...settings(config.minify) } : false,
+    minify: config.minify ?? false,
     csp: config.csp ? { ...DEFAULT_CSP, ...settings(config.csp) } : false,
     sitemap: config.sitemap ? { sections: [], dates: true, ...settings(config.sitemap) } : false,
     robots: config.robots ? { block: [], disallow: [], ...settings(config.robots) } : false,

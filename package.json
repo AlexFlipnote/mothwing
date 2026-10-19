@@ -52,9 +52,7 @@
     "docs:dev": "node bin/mothwing.js dev --root docs"
   },
   "dependencies": {
-    "@types/html-minifier-terser": "^7.0.2",
-    "esbuild": "0.28.1",
-    "html-minifier-terser": "7.2.0"
+    "esbuild": "0.28.1"
   },
   "peerDependencies": {
     "sass": "^1.93.3"
