@@ -1,8 +1,11 @@
 import assert from "node:assert/strict"
 import { describe, it } from "node:test"
+import { fileURLToPath } from "node:url"
+import esbuild from "esbuild"
+import { asset } from "../src/asset.js"
 import { resolveConfig } from "../src/config.js"
 import { withCsp } from "../src/csp.js"
-import { asset, html } from "../src/html.js"
+import { html } from "../src/html.js"
 import { buildState, renderPage } from "../src/render.js"
 import { fitDescription, seoTags } from "../src/seo.js"
 import { fillPlaceholders, includeHtml, parseTemplate, renderNodes } from "../src/template.js"
@@ -176,6 +179,13 @@ describe("renderPage", () => {
 
   it("takes asset paths with or without the leading slash", () => {
     assert.equal(render("<x-css src=\"css/a.css\"/>"), render("<x-css src=\"/css/a.css\"/>"))
+  })
+})
+
+describe("mothwing/html", () => {
+  it("bundles for browsers, as their scripts import it too", async () => {
+    const entry = fileURLToPath(new URL("../src/html.js", import.meta.url))
+    await esbuild.build({ entryPoints: [entry], bundle: true, platform: "browser", write: false, logLevel: "silent" })
   })
 })
 

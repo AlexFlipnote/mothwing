@@ -1,3 +1,4 @@
+export { asset } from "./asset.js"
 export { clean } from "./assets.js"
 export { build, renderSite } from "./build.js"
 export { defineConfig, loadConfig, resolveConfig } from "./config.js"
@@ -17,4 +18,5 @@ export { log } from "./log.js"
  * @typedef {import("./config.js").Transform} Transform
  * @typedef {import("./config.js").Hook} Hook
  * @typedef {import("./routes.js").Route} Route
+ * @typedef {import("./asset.js").Asset} Asset
  */
