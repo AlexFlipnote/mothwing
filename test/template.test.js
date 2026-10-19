@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { resolveConfig } from "../src/config.js"
 import { withCsp } from "../src/csp.js"
+import { asset, html } from "../src/html.js"
 import { buildState, renderPage } from "../src/render.js"
 import { fitDescription, seoTags } from "../src/seo.js"
 import { fillPlaceholders, includeHtml, parseTemplate, renderNodes } from "../src/template.js"
@@ -175,6 +176,26 @@ describe("renderPage", () => {
 
   it("takes asset paths with or without the leading slash", () => {
     assert.equal(render("<x-css src=\"css/a.css\"/>"), render("<x-css src=\"/css/a.css\"/>"))
+  })
+})
+
+describe("asset", () => {
+  it("is its URL with a hash of its content, in {{ }} and html`...` alike", () => {
+    const index = asset("search.json", "[1,2]")
+    assert.equal(index.path, "/search.json")
+    assert.match(index.url, /^\/search\.json\?v=[0-9a-f]{8}$/)
+    assert.equal(asset("/search.json", "[1,2]").url, index.url, "with or without the leading slash")
+    assert.notEqual(asset("search.json", "[1,2,3]").url, index.url, "a new hash for new content")
+    assert.equal(fillPlaceholders("<input data-index=\"{{ search.index }}\">", { search: { index } }, "x"), `<input data-index="${index.url}">`)
+    assert.equal(String(html`<a href="${index}">`), `<a href="${index.url}">`)
+  })
+
+  it("takes bytes too", () => {
+    assert.match(asset("images/dot.png", new Uint8Array([137, 80, 78, 71])).url, /^\/images\/dot\.png\?v=[0-9a-f]{8}$/)
+  })
+
+  it("stays in the build", () => {
+    assert.throws(() => asset("../secret.txt", "x"), /has to stay in the build/)
   })
 })
 

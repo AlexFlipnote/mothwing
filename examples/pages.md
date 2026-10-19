@@ -19,4 +19,4 @@ export default () => ({ updated: new Date().toISOString() })
 | `sources` | The files its content comes from, relative to `src/`, which the sitemap dates the page by |
 | `files` | More files to write, by their path in the build: `{ "rows/list.html": "..." }` |
 
-For building HTML in a `.data.js`, `mothwing/html` has an `html` tagged template, which escapes what goes into it unless it's HTML already, and `slug()`.
+For building HTML in a `.data.js`, `mothwing/html` has an `html` tagged template, which escapes what goes into it unless it's HTML already, `slug()`, and `asset()` for files linked by a hash of their content, see [Data](data.md).

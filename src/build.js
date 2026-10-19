@@ -4,6 +4,7 @@ import { buildJS, buildSass, clean, copyAssets } from "./assets.js"
 import { withCsp } from "./csp.js"
 import { loadData } from "./data.js"
 import { dependencies } from "./deps.js"
+import { Asset, Html } from "./html.js"
 import { log } from "./log.js"
 import { minifyHtml } from "./minify.js"
 import { buildState, renderPage } from "./render.js"
@@ -14,17 +15,35 @@ import { writeSiteFiles } from "./site.js"
  * Writes a file unless it already has this content. Writing is much slower than reading on Windows, and a dev render
  * of a whole site mostly writes what's already there.
  * @param {string} file
- * @param {string} content
+ * @param {string | Uint8Array} content
  * @returns {boolean} Whether it was written
  */
 export function writeIfChanged(file, content) {
   try {
-    if (fs.readFileSync(file, "utf8") === content) return false
+    const old = fs.readFileSync(file)
+    if (typeof content === "string" ? old.toString("utf8") === content : old.equals(content)) return false
   } catch {
     fs.mkdirSync(path.dirname(file), { recursive: true })
   }
   fs.writeFileSync(file, content)
   return true
+}
+
+/**
+ * @param {any} value Data, however deep
+ * @param {Map<string, Asset>} found Each asset() in it, by its path
+ * @param {Set<object>} [seen] What's looked through already, as the same item is in the data folder and its page
+ */
+function findAssets(value, found, seen = new Set()) {
+  if (!value || typeof value !== "object" || seen.has(value) || value instanceof Html || ArrayBuffer.isView(value)) return
+  seen.add(value)
+  if (value instanceof Asset) {
+    const known = found.get(value.path)
+    if (known && known.url !== value.url) throw new Error(`asset("${value.path}") is made twice, with different content`)
+    found.set(value.path, value)
+    return
+  }
+  for (const inner of Array.isArray(value) ? value : Object.values(value)) findAssets(inner, found, seen)
 }
 
 /**
@@ -45,6 +64,17 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
   const routes = await listRoutes(site, state.data, only)
   let written = 0
   let files = 0
+
+  // The data's asset()s, written before the pages that link to them
+  /** @type {Map<string, Asset>} */
+  const assets = new Map()
+  const seen = new Set()
+  findAssets(state.data.values, assets, seen)
+  for (const route of routes) findAssets(route.props, assets, seen)
+  for (const asset of assets.values()) {
+    if (writeIfChanged(path.join(site.out, asset.path), asset.content)) files++
+  }
+
   for (const route of routes) {
     const html = renderPage(site, state, route, hashed)
     const finished = hashed && site.minify ? await minifyHtml(html).catch(error => { throw new Error(`${route.source}: ${error.message}`) }) : html

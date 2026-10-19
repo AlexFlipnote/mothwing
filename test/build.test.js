@@ -1,4 +1,5 @@
 import assert from "node:assert/strict"
+import crypto from "node:crypto"
 import fs from "node:fs"
 import path from "node:path"
 import { after, before, describe, it } from "node:test"
@@ -80,6 +81,14 @@ describe("build", () => {
   it("escapes {{ }} and leaves {{{ }}} as HTML", () => {
     assert.ok(read("index.html").includes("Tom &amp; Jerry &lt;3"))
     assert.ok(read("posts/first/index.html").includes("<p>One</p><p>Two</p>"))
+  })
+
+  it("writes the data's asset()s, which pages link to by a hash of their content", () => {
+    const hash = (/** @type {string} */ content) => crypto.createHash("md5").update(content).digest("hex").slice(0, 8)
+    assert.equal(read("search.json"), "[\"first\",\"second\"]", "from the data folder")
+    assert.ok(read("posts/index.html").includes(`<input type="search" data-index="/search.json?v=${hash("[\"first\",\"second\"]")}">`))
+    assert.equal(read("posts/first.txt"), "One\nTwo", "from a page's .data.js")
+    assert.ok(read("posts/first/index.html").includes(`<a href="/posts/first.txt?v=${hash("One\nTwo")}">As text</a>`))
   })
 
   it("minifies to HTML that minifying again leaves as it is", async () => {
