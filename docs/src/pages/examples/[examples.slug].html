@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="{{ page.title }}" description="{{ page.summary }}" section="Examples" name="{{ page.title }}"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <main>
+      <p class="kind">Example</p>
+      <h1>{{ page.title }}</h1>
+      {{{ page.html }}}
+
+      <div class="pager">
+        <x-if value="page.previous">
+          <a class="previous" href="/examples/{{ page.previous.slug }}/"><span>Previous</span>{{ page.previous.title }}</a>
+        </x-if>
+        <x-if value="page.next">
+          <a class="next" href="/examples/{{ page.next.slug }}/"><span>Next</span>{{ page.next.title }}</a>
+        </x-if>
+      </div>
+    </main>
+  </body>
+</html>

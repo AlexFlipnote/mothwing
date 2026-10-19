@@ -9,12 +9,50 @@
     <main>
       <h1>API</h1>
       <p>What <code>mothwing</code> and <code>mothwing/html</code> export, for scripts that build a site themselves and for typing <code>mothwing.config.js</code>.</p>
-      <dl class="exports">
-        <x-each items="api" as="item">
-          <dt><a href="/api/{{ item.slug }}/"><code>{{ item.name }}</code></a> <span class="kind">{{ item.kindName }}</span></dt>
-          <dd>{{ item.summary }}</dd>
+
+      <aside class="contents">
+        <x-each items="groups" as="group">
+          <div>
+            <h3><a href="#{{ group.id }}">{{ group.name }}</a></h3>
+            <ul>
+              <x-each items="group.items" as="item">
+                <li><a href="#{{ item.slug }}"><code>{{ item.name }}</code></a></li>
+              </x-each>
+            </ul>
+          </div>
         </x-each>
-      </dl>
+      </aside>
+      <x-each items="groups" as="group">
+        <section id="{{ group.id }}">
+          <h2>{{ group.name }}</h2>
+          <x-each items="group.items" as="item">
+            <article id="{{ item.slug }}" class="symbol">
+              <x-each items="item.heads" as="head">
+                <pre class="signature"><span class="badge {{ item.kind }}" title="{{ item.kindName }}">{{ group.badge }}</span><code>{{{ head }}}</code></pre>
+              </x-each>
+              <x-if value="item.description">
+                <p>{{{ item.description }}}</p>
+              </x-if>
+              <x-if not="item.description">
+                <p class="none">No documentation</p>
+              </x-if>
+              <x-if value="item.properties">
+                <dl class="members">
+                  <x-each items="item.properties" as="prop">
+                    <dt><code>{{{ prop.head }}}</code></dt>
+                    <x-if value="prop.description">
+                      <dd>{{{ prop.description }}}</dd>
+                    </x-if>
+                    <x-if not="prop.description">
+                      <dd class="none">No documentation</dd>
+                    </x-if>
+                  </x-each>
+                </dl>
+              </x-if>
+            </article>
+          </x-each>
+        </section>
+      </x-each>
     </main>
   </body>
 </html>

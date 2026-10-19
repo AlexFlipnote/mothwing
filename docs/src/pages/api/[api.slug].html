@@ -35,11 +35,11 @@
           </table>
         </x-if>
         <h2>Returns</h2>
-        <p><code>{{{ sig.returns }}}</code> {{{ sig.returnsDescription }}}</p>
+        <p class="returns"><code>{{{ sig.returns }}}</code> {{{ sig.returnsDescription }}}</p>
       </x-each>
 
       <x-if value="page.properties">
-        <h2>Properties</h2>
+        <h2>{{ page.propertiesTitle }}</h2>
         <table>
           <x-each items="page.properties" as="prop">
             <tr>

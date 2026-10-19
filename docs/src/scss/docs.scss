@@ -30,6 +30,8 @@ $mono: ui-monospace, Consolas, monospace;
   --code: #{mix($body, #fff, 55%)};
   --brand: #{$body};
   --accent: #{$antenna};
+  --type: #{mix($body, #fff, 35%)};
+  --literal: #{mix($antenna, #fd5, 25%)};
 }
 
 * { box-sizing: border-box; }
@@ -125,7 +127,134 @@ td:nth-child(2) { width: 35%; }
   h1 { margin: 0; font-size: 2.5rem; line-height: 1.1; }
 }
 
-.exports {
-  dt { margin-top: 1rem; }
-  dd { margin: 0; color: var(--muted); }
+// Code blocks in the README and examples, highlighted by highlight.js in docs/src/lib/markdown.js
+.hljs {
+  .hljs-keyword, .hljs-meta { color: var(--accent); }
+  .hljs-string, .hljs-number, .hljs-literal, .hljs-regexp { color: var(--literal); }
+  .hljs-comment { color: var(--muted); font-style: italic; }
+  .hljs-tag, .hljs-name, .hljs-built_in { color: var(--brand); }
+  .hljs-attr, .hljs-property, .hljs-params { color: var(--type); }
+  .hljs-title, .hljs-variable { color: var(--fg); }
+  .hljs-template-variable, .hljs-subst { color: var(--code); }
 }
+
+// Linked to by #, from other examples and the README
+h2[id], h3[id] { scroll-margin-top: 1rem; }
+h3 { margin-top: 1.5rem; font-size: 1rem; }
+
+// The examples' list, a title and its first paragraph each
+.examples {
+  padding: 0;
+  list-style: none;
+
+  li { padding: .75rem 0; border-top: 1px solid var(--line); }
+  > li > a { font-weight: 700; }
+  p { margin: .2rem 0 0; color: var(--muted); }
+}
+
+// Previous and next under an example
+.pager {
+  display: flex;
+  gap: 1rem;
+  margin-top: 3rem;
+
+  a {
+    flex: 1;
+    padding: .75rem 1rem;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    text-decoration: none;
+
+    &:hover { border-color: var(--accent); }
+  }
+
+  span { display: block; color: var(--muted); font-size: .8rem; }
+  .next { text-align: right; }
+}
+
+// Signatures and types, coloured by docs/src/data/api.js
+@mixin tokens {
+  .name { color: var(--fg); font-weight: 700; }
+  .keyword { color: var(--accent); }
+  .built-in { color: var(--brand); }
+  .type { color: var(--type); }
+  .literal { color: var(--literal); }
+  a { color: var(--accent); }
+  .name a { color: inherit; }
+}
+
+pre.signature, td code, .returns code, .members { @include tokens; }
+
+// Every export at a glance, a column per group
+.contents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 1rem 2rem;
+  margin-top: 2rem;
+  padding: 1rem 1.25rem;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+
+  h3 { margin: 0 0 .4rem; font-size: .95rem; }
+  h3 a { color: var(--brand); text-decoration: none; }
+  ul { margin: 0; padding: 0; list-style: none; }
+  li a { text-decoration: none; }
+  li a code { background: none; padding: 0; }
+  li a:hover code { color: var(--accent); }
+}
+
+section { scroll-margin-top: 1rem; }
+
+// The reference's groups: Functions, Classes, ...
+section > h2 {
+  margin-top: 2.5rem;
+  font-size: 1.4rem;
+  color: var(--fg);
+}
+
+// Unboxed here, with as many signatures as there are exports, their own pages keep the box
+.symbol {
+  margin-block: 1.25rem 2.25rem;
+  scroll-margin-top: 1rem;
+
+  pre.signature {
+    display: flex;
+    gap: .75rem;
+    align-items: baseline;
+    margin: 0 0 .4rem;
+    padding: 0;
+    background: none;
+    border: 0;
+    font-size: .95rem;
+  }
+
+  > p { margin: 0 0 0 2.25rem; }
+  .members { margin-left: 2.25rem; }
+}
+
+.badge {
+  flex: none;
+  min-width: 1.5rem;
+  padding: 0 .3rem;
+  border-radius: 4px;
+  background: var(--line);
+  color: var(--brand);
+  font-size: .8rem;
+  text-align: center;
+
+  &.class { color: var(--accent); }
+  &.type, &.callback { color: var(--literal); }
+}
+
+.members {
+  margin: 1rem 0 0 1rem;
+  padding-left: 1rem;
+  border-left: 1px solid var(--line);
+
+  dt { margin-top: .75rem; }
+  dt code { background: none; padding: 0; }
+  dd { margin: .15rem 0 0; color: var(--muted); }
+}
+
+.none { color: var(--muted); font-style: italic; }

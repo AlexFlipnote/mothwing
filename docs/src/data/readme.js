@@ -1,34 +1,33 @@
 /*
-  The README's introduction, from its first paragraph to "## Built with mothwing", as HTML for the front page.
-  Only the Markdown that part uses is understood: paragraphs, ## headings, **bold**, `code` and [links](url).
+  Parts of the README as HTML for the front page: its introduction, from its first paragraph to "## Built with mothwing",
+  and "## Getting started" up to the next heading.
 */
 import fs from "fs"
 import path from "path"
 import { fileURLToPath } from "url"
-import { escapeHtml } from "mothwing/html"
+import { markdown } from "../lib/markdown.js"
 
 const README = path.resolve(fileURLToPath(import.meta.url), "../../../../README.md")
 
 export const sources = ["../../README.md"]
 
 /**
- * @param {string} text A line of Markdown
- * @returns {string} As HTML
+ * @param {string} readme
+ * @param {string} from Where the part starts, kept
+ * @param {string} [to] Where it ends, left out. The next ## heading
+ * @returns {string} The part as HTML
  */
-const inline = (text) => escapeHtml(text)
-  .replace(/`([^`]+)`/g, "<code>$1</code>")
-  .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
-  .replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, "<a href=\"$2\">$1</a>")
+const part = (readme, from, to) => {
+  const start = readme.indexOf(from)
+  const end = to ? readme.indexOf(to, start) : readme.indexOf("\n## ", start + from.length)
+  if (start < 0 || end < start) throw new Error(`readme: can't find the part from ${from} to ${to ?? "the next heading"}`)
+  return markdown(readme.slice(start, end).trim())
+}
 
 export default () => {
   const readme = fs.readFileSync(README, "utf8").replaceAll("\r\n", "\n")
-  const start = readme.indexOf("**Write HTML")
-  const end = readme.indexOf("\n## Built with mothwing")
-  if (start < 0 || end < start) throw new Error("readme: can't find the introduction, from **Write HTML to ## Built with mothwing")
-
-  const intro = readme.slice(start, end).trim()
-    .split(/\n+/)
-    .map(line => line.startsWith("## ") ? `<h2>${inline(line.slice(3))}</h2>` : `<p>${inline(line)}</p>`)
-    .join("\n")
-  return { intro }
+  return {
+    intro: part(readme, "**Write HTML", "\n## Built with mothwing"),
+    start: part(readme, "## Getting started")
+  }
 }

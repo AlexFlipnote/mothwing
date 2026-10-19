@@ -69,6 +69,10 @@
     "@types/node": "^22.20.5",
     "eslint": "^9.39.5",
     "globals": "^16.5.0",
+    "highlight.js": "^11.12.0",
+    "marked": "^18.1.1",
+    "marked-gfm-heading-id": "^4.1.4",
+    "marked-highlight": "^2.2.4",
     "sass": "^1.105.2",
     "typescript": "^6.0.3"
   }

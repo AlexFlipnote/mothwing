@@ -4,10 +4,16 @@ import { defineConfig } from "mothwing"
 
 export default defineConfig({
   domain: "mothwing.dev",
-  seo: { siteName: "mothwing" },
+  seo: {
+    siteName: "mothwing",
+    image: {
+      src: "/images/logo.png", width: 512, height: 512,
+      alt: "The mothwing logo, a moth written as <|>"
+    }
+  },
   sass: { "scss/docs.scss": "css/docs.css" },
-  exclude: ["scss"],
-  rerender: ["../../src", "../../README.md"],
+  exclude: ["scss", "lib"],
+  rerender: ["../../src", "../../README.md", "../../examples"],
   activeLinks: true,
   minify: true,
   csp: true,

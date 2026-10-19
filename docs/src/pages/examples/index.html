@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="Examples" description="What mothwing does, part by part, from examples/ in its repository"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <main>
+      <h1>Examples</h1>
+      <p>What mothwing does, part by part, past <a href="/">getting started</a>. Every option is in the <a href="/api/Config/">API reference</a>.</p>
+      <ol class="examples">
+        <x-each items="examples" as="example">
+          <li>
+            <a href="/examples/{{ example.slug }}/">{{ example.title }}</a>
+            <p>{{ example.summary }}</p>
+          </li>
+        </x-each>
+      </ol>
+    </main>
+  </body>
+</html>
