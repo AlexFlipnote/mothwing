@@ -1,4 +1,5 @@
 /**
+ * Prints a line the way mothwing's own are, `[  HTML ] 2026-01-01 12:00:00 message`, for hooks to report in.
  * @param {string} type Short tag, like "HTML"
  * @param {string} message
  */

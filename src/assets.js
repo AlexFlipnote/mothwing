@@ -13,7 +13,10 @@ export const isExcluded = (site, file) => {
   return site.exclude.some(dir => relative === dir || relative.startsWith(`${dir}/`))
 }
 
-/** @param {import("./config.js").Site} site */
+/**
+ * Removes the build folder, what the production build starts with.
+ * @param {import("./config.js").Site} site
+ */
 export async function clean(site) {
   log("CLEAN", "Removing build folder...")
   // Retries, as the dev server can be writing a file into it right then

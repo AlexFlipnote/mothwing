@@ -16,22 +16,25 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {string} [partials] The partials folder, left out of the build. <x-html> takes a partial from anywhere in
  *   src, this is only the folder that isn't copied. "partials"
  * @property {string} [data] The data folder, its files are in every page by their name: projects.json -> {{ projects }}.
- *   "data"
+ *   Left out of the build. "data"
  * @property {string} [notFound] The 404 page, in the pages folder. Kept in the build's root, out of the sitemap. "404.html"
  * @property {JsConfig} [js] The JS to bundle
- * @property {Record<string, string>} [sass] Sass to compile, source to output: { "scss/index.scss": "css/index.css" }
+ * @property {Record<string, string>} [sass] Sass to compile, source to output: { "scss/index.scss": "css/index.css" }.
+ *   Needs sass installed
  * @property {string[]} [exclude] Folders left out of the build, on top of pages, partials and data: ["js", "scss"]
  * @property {string[]} [rerender] Folders and files the pages read with fs, whose changes render every page again in
- *   dev. They can be outside src, "../README.md", and are watched too. What the pages import, include or use from the
- *   data folder is followed on its own
+ *   dev. They can be outside src, "../README.md", and are watched too, Sass in them builds the CSS first. What the pages
+ *   import, include or use from the data folder is followed on its own
  * @property {SeoConfig} [seo] For <x-seo>
  * @property {boolean | import("html-minifier-terser").Options} [minify] Minify the HTML of production builds
  * @property {boolean | Record<string, string>} [csp] A Content-Security-Policy <meta> that allows only the site's own
- *   files and inline scripts. An object sets directives over the defaults: { "style-src": "'self' 'unsafe-inline'" }
- * @property {boolean | SitemapConfig} [sitemap] sitemap.xml
- * @property {boolean | RobotsConfig} [robots] robots.txt
+ *   files, and its inline scripts by their hash. An object sets directives over the defaults:
+ *   { "style-src": "'self' 'unsafe-inline'" }
+ * @property {boolean | SitemapConfig} [sitemap] sitemap.xml with every page, each dated by the last git commit to its files
+ * @property {boolean | RobotsConfig} [robots] robots.txt, allowing every crawler and pointing at the sitemap
  * @property {boolean} [cname] A CNAME file with the domain, for GitHub Pages
- * @property {boolean | ActiveLink} [activeLinks] aria-current on links to the page they're on and to its section
+ * @property {boolean | ActiveLink} [activeLinks] aria-current="page" on links to the page they're on, "true" on links to
+ *   its section
  * @property {Record<string, TagFunction>} [tags] Your own tags: { "x-name": ({ attrs }) => "<b>html</b>" }
  * @property {Transform[]} [transforms] Run on every page's HTML once its placeholders are filled
  * @property {Hook[]} [after] Run once the pages are written
@@ -47,6 +50,7 @@ export const CONFIG_FILE = "mothwing.config.js"
  */
 
 /**
+ * What <x-seo> fills its tags with when a page doesn't say.
  * @typedef {object} SeoConfig
  * @property {string} [siteName] Added to titles that fit, and the link previews' site name. The domain
  * @property {string} [locale] "en_US"
@@ -57,6 +61,7 @@ export const CONFIG_FILE = "mothwing.config.js"
  */
 
 /**
+ * How sitemap.xml is split and dated.
  * @typedef {object} SitemapConfig
  * @property {string[]} [sections] Sections that get a sitemap of their own behind a sitemap index, the rest share
  *   sitemap-pages.xml. Without any, sitemap.xml has every page itself
@@ -64,6 +69,7 @@ export const CONFIG_FILE = "mothwing.config.js"
  */
 
 /**
+ * What robots.txt turns away.
  * @typedef {object} RobotsConfig
  * @property {string[]} [block] Crawlers turned away from the whole site, by name
  * @property {string[]} [disallow] Paths kept out of every crawler
@@ -91,32 +97,27 @@ export const CONFIG_FILE = "mothwing.config.js"
  */
 
 /**
- * The config with its defaults filled in, its folders absolute, and each extra either false or its settings.
- * @typedef {object} Site
- * @property {string} domain
+ * The options resolveConfig changes, the rest of Site is Config as it was with its defaults.
+ * @typedef {object} Resolved
  * @property {string} url "https://example.com"
  * @property {string} root The config's folder
- * @property {string} src
- * @property {string} out
- * @property {string} pages
- * @property {string} partials Relative to src
- * @property {string} data Relative to src
- * @property {string} notFound
- * @property {Required<JsConfig>} js
- * @property {Record<string, string>} sass
- * @property {string[]} exclude Folders, with pages, partials and data
- * @property {string[]} rerender Folders and files, relative to src as "js/data" and "../README.md"
- * @property {Required<SeoConfig>} seo
- * @property {import("html-minifier-terser").Options | false} minify
- * @property {Record<string, string> | false} csp
- * @property {Required<SitemapConfig> | false} sitemap
- * @property {Required<RobotsConfig> | false} robots
- * @property {boolean} cname
- * @property {ActiveLink | false} activeLinks
- * @property {Record<string, TagFunction>} tags
- * @property {Transform[]} transforms
- * @property {Hook[]} after
- * @property {import("esbuild").BuildOptions} esbuild
+ * @property {string} src The source folder, absolute
+ * @property {string} out The build folder, absolute
+ * @property {string} pages The pages folder, absolute
+ * @property {string[]} exclude Folders left out of the build, with pages, partials and data
+ * @property {Required<JsConfig>} js The JS to bundle
+ * @property {Required<SeoConfig>} seo For <x-seo>
+ * @property {import("html-minifier-terser").Options | false} minify Minify the HTML of production builds
+ * @property {Record<string, string> | false} csp The Content-Security-Policy's directives
+ * @property {Required<SitemapConfig> | false} sitemap sitemap.xml
+ * @property {Required<RobotsConfig> | false} robots robots.txt
+ * @property {ActiveLink | false} activeLinks aria-current on links to the page they're on and to its section
+ */
+
+/**
+ * What Config becomes after resolveConfig, and what tags, transforms and hooks get: every option filled in with its
+ * default, its folders absolute, and each extra either false or its settings.
+ * @typedef {Omit<Required<Config>, keyof Resolved> & Resolved} Site
  */
 
 const OPTIONS = [
@@ -156,6 +157,7 @@ const settings = (value) => typeof value === "object" ? value : {}
 export const defineConfig = (config) => config
 
 /**
+ * Checks a config and fills in its defaults. An unknown option, or one without a domain, throws.
  * @param {Config} config
  * @param {string} root The config's folder
  * @returns {Site}
@@ -212,6 +214,7 @@ export function resolveConfig(config, root) {
 }
 
 /**
+ * Imports a folder's mothwing.config.js and resolves it, what the CLI does before it builds.
  * @param {string} [root] The folder with mothwing.config.js
  * @returns {Promise<Site>}
  */
