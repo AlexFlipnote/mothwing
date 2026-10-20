@@ -1,3 +1,4 @@
+import crypto from "crypto"
 import fs from "fs"
 import http from "http"
 import path from "path"
@@ -5,7 +6,18 @@ import path from "path"
 const RELOAD = "/__mothwing/reload"
 // A file rather than inline, so a csp of only 'self' lets it run
 const RELOAD_TAG = `<script src="${RELOAD}.js"></script>`
-const RELOAD_JS = `new EventSource("${RELOAD}").addEventListener("reload", () => location.reload())\n`
+// A WebSocket rather than an EventSource, which keeps one of the 6 connections a browser opens to a host for every
+// tab, so with a few tabs open the next requests wait for one to free up
+const RELOAD_JS = `const connect = () => {
+  const socket = new WebSocket(\`ws\${location.protocol === "https:" ? "s" : ""}://\${location.host}${RELOAD}\`)
+  socket.addEventListener("message", () => location.reload())
+  // The dev server stopping closes it, it connects again once it's back
+  socket.addEventListener("close", () => setTimeout(connect, 1000))
+}
+connect()
+`
+// The reload message, as a WebSocket text frame
+const RELOAD_FRAME = Buffer.from([0x81, 6, ...Buffer.from("reload")])
 
 /**
  * Sends a page with the reload script in it.
@@ -32,7 +44,7 @@ function sendPage(res, status, html, headers = {}) {
 export async function serve(site, context, { host, port }) {
   const esbuild = await context.serve({ servedir: site.out, host: "127.0.0.1" })
   const notFound = path.join(site.out, site.notFound)
-  /** @type {Set<http.ServerResponse>} */
+  /** @type {Set<import("stream").Duplex>} */
   const clients = new Set()
 
   /**
@@ -46,13 +58,6 @@ export async function serve(site, context, { host, port }) {
   }
 
   const server = http.createServer((req, res) => {
-    if (req.url === RELOAD) {
-      res.writeHead(200, { "content-type": "text/event-stream", "cache-control": "no-cache" })
-      res.write(": connected\n\n")
-      clients.add(res)
-      req.on("close", () => clients.delete(res))
-      return
-    }
     if (req.url === `${RELOAD}.js`) {
       res.writeHead(200, { "content-type": "text/javascript" })
       res.end(RELOAD_JS)
@@ -84,6 +89,17 @@ export async function serve(site, context, { host, port }) {
     req.pipe(proxy)
   })
 
+  server.on("upgrade", (req, socket) => {
+    if (req.url !== RELOAD || req.headers.upgrade?.toLowerCase() !== "websocket") return socket.destroy()
+    const accept = crypto.createHash("sha1").update(`${req.headers["sec-websocket-key"]}258EAFA5-E914-47DA-95CA-C5AB0DC85B11`).digest("base64")
+    socket.write(`HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: ${accept}\r\n\r\n`)
+    clients.add(socket)
+    // The page only listens, all it sends is a close frame when it goes
+    socket.on("data", (data) => (data[0] & 0x0f) === 8 && socket.end(Buffer.from([0x88, 0])))
+    socket.on("error", () => socket.destroy())
+    socket.on("close", () => clients.delete(socket))
+  })
+
   await new Promise((resolve, reject) => {
     server.once("error", reject)
     server.listen(port, host, () => resolve(undefined))
@@ -94,7 +110,7 @@ export async function serve(site, context, { host, port }) {
   const reload = () => {
     clearTimeout(soon)
     soon = setTimeout(() => {
-      for (const res of clients) res.write("event: reload\ndata:\n\n")
+      for (const socket of clients) socket.write(RELOAD_FRAME)
     }, 100)
   }
   return { server, reload }

@@ -1,6 +1,7 @@
 import assert from "node:assert/strict"
 import crypto from "node:crypto"
 import fs from "node:fs"
+import http from "node:http"
 import path from "node:path"
 import { after, before, describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
@@ -315,12 +316,14 @@ describe("dev server", () => {
   })
 
   it("sends the pages open a reload", async () => {
-    const res = await fetch(`${url}/__mothwing/reload`)
-    const reader = /** @type {ReadableStream<Uint8Array>} */ (res.body).getReader()
-    await reader.read()
+    const req = http.request(`${url}/__mothwing/reload`, {
+      headers: { connection: "Upgrade", upgrade: "websocket", "sec-websocket-version": "13", "sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==" }
+    })
+    /** @type {import("node:stream").Duplex} */
+    const socket = await new Promise(resolve => req.on("upgrade", (_, socket) => resolve(socket)).end())
+    const frame = new Promise(resolve => socket.once("data", resolve))
     served.reload()
-    const { value } = await reader.read()
-    assert.match(new TextDecoder().decode(value), /event: reload/)
-    await reader.cancel()
+    assert.equal((await frame).subarray(2).toString(), "reload")
+    socket.destroy()
   })
 })
