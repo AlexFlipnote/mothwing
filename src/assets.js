@@ -41,7 +41,7 @@ export async function copyAssets(site) {
  * @param {string[]} files "js/a.js", "js/pages/b.js"
  * @returns {string} The folder they're all in, "js"
  */
-function commonFolder(files) {
+export function commonFolder(files) {
   const [first = [], ...rest] = files.map(file => path.posix.dirname(file).split("/"))
   let depth = first.length
   for (const parts of rest) {

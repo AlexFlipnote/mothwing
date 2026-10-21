@@ -1,30 +1,52 @@
 import { execFileSync } from "child_process"
 import fs from "fs"
 import path from "path"
+import { commonFolder } from "./assets.js"
 import { log, posix } from "./log.js"
 
 /**
+ * Reads the history of the files the pages are made from, from one git log of the folder they're all in, rather than
+ * one per page, which takes seconds on a big site.
  * @param {import("./config.js").Site} site
- * @param {Map<string, string | null>} cache Sorted file list -> its lastmod, many pages are made from the same files
  * @param {string[]} files Relative to src
- * @returns {string | null} YYYY-MM-DD of the last commit that changed one of them, null without git
+ * @returns {((files: string[]) => string) | null} Gets YYYY-MM-DD of the last commit that changed one of the files,
+ *   null without git
  */
-function lastModified(site, cache, files) {
-  const key = [...new Set(files)].sort().join("|")
-  if (!cache.has(key)) {
-    try {
-      const date = execFileSync("git", ["log", "-1", "--format=%cs", "--", ...key.split("|").map(f => posix(path.relative(site.root, path.join(site.src, f))))], {
-        cwd: site.root,
-        encoding: "utf8",
-        stdio: ["ignore", "pipe", "ignore"]
-      }).trim()
-      // Not committed yet, so changed today
-      cache.set(key, date || new Date().toISOString().slice(0, 10))
-    } catch {
-      cache.set(key, null)
+function commitDates(site, files) {
+  /** @param {string[]} args */
+  const git = (args) => execFileSync("git", args, {
+    cwd: site.root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+    maxBuffer: 1024 * 1024 * 1024
+  })
+  try {
+    // git names files from the top of the repo, the root can be a folder in it
+    const prefix = git(["rev-parse", "--show-prefix"]).trim()
+    /** @param {string} file */
+    const repoPath = (file) => path.posix.normalize(prefix + posix(path.relative(site.root, path.join(site.src, file))))
+
+    /** @type {Map<string, { commit: number, date: string }>} Each file's last commit, by how many commits ago */
+    const last = new Map()
+    let commit = -1
+    let date = ""
+    // Newest first: each commit's \x01date, then the files it changed
+    for (const entry of git(["log", "-z", "--format=%x01%cs", "--name-only", "--", `:/${commonFolder(files.map(repoPath))}`]).split("\0")) {
+      const text = entry.replace(/^\n/, "")
+      if (text.startsWith("\x01")) {
+        commit++
+        date = text.slice(1)
+      } else if (text && !last.has(text)) last.set(text, { commit, date })
     }
+
+    return (files) => {
+      const newest = files.map(file => last.get(repoPath(file))).reduce((a, b) => !a || (b && b.commit < a.commit) ? b : a, undefined)
+      // Not committed yet, so changed today
+      return newest?.date ?? new Date().toISOString().slice(0, 10)
+    }
+  } catch {
+    return null
   }
-  return cache.get(key) ?? null
 }
 
 /**
@@ -45,14 +67,14 @@ export async function writeSiteFiles(site, routes, dated = true) {
   /** @type {Map<string, { url: string, lastmod: string | null | false }[]>} */
   const sitemaps = new Map()
   if (site.sitemap) {
-    const cache = new Map()
+    const dates = dated && site.sitemap.dates ? commitDates(site, routes.flatMap(route => route.sources)) : null
     // With sections, a sitemap per section behind a sitemap index, so Search Console shows how each one is indexed on its own
     for (const route of routes.filter(route => route.source !== site.notFound)) {
       const section = route.url.split("/")[1]
       const name = site.sitemap.sections.includes(section) ? section : "pages"
       const pages = sitemaps.get(name) ?? []
       sitemaps.set(name, pages)
-      pages.push({ url: route.url, lastmod: dated && site.sitemap.dates && lastModified(site, cache, route.sources) })
+      pages.push({ url: route.url, lastmod: dates ? dates(route.sources) : false })
     }
 
     /**
