@@ -33,6 +33,20 @@ const JSON_TYPES = new Set(["application/json", "application/ld+json", "importma
 
 /** HTML's whitespace, not \s, which takes &nbsp;'s character too */
 const SPACE = /[ \t\n\r\f]+/g
+const ONLY_SPACE = /^[ \t\n\r\f]*$/
+
+/**
+ * @param {string | undefined} char
+ * @returns {boolean} One of HTML's whitespace
+ */
+const isSpace = (char) => char === " " || char === "\t" || char === "\n" || char === "\r" || char === "\f"
+
+// Made once and read from where lastIndex is put, a literal in the loops would be a new one each time round
+const TAG_OPEN = /<(\/?)([a-zA-Z][\w:.-]*)/y
+const ATTR_NAME = /[^\s"'>/=]+/y
+const UNQUOTED = /[^ \t\n\r\f>]*/y
+/** Where each raw element's content ends */
+const RAW_CLOSE = new Map([...RAW].map(name => [name, new RegExp(`</${name}[ \\t\\n\\r\\f]*>`, "ig")]))
 
 /**
  * @typedef {{ type: "text", text: string }
@@ -55,20 +69,19 @@ function readAttrs(html, start) {
   let unquoted = false
   let i = start
   while (i < html.length) {
-    while (/[ \t\n\r\f]/.test(html[i] ?? "")) i++
+    while (isSpace(html[i])) i++
     if (html[i] === ">") return { attrs, values, end: i + 1, selfClosing: false, unquoted }
     if (html.startsWith("/>", i)) return { attrs, values, end: i + 2, selfClosing: true, unquoted }
     if (html[i] === "/") {
       i++
       continue
     }
-    const name = /[^\s"'>/=]+/y
-    name.lastIndex = i
-    const found = name.exec(html)?.[0]
+    ATTR_NAME.lastIndex = i
+    const found = ATTR_NAME.exec(html)?.[0]
     if (!found) throw new Error(`minify: can't read the tag at "${html.slice(start, start + 40)}"`)
     i += found.length
     let after = i
-    while (/[ \t\n\r\f]/.test(html[after] ?? "")) after++
+    while (isSpace(html[after])) after++
     if (html[after] !== "=") {
       attrs.push(found)
       values[found.toLowerCase()] = ""
@@ -76,7 +89,7 @@ function readAttrs(html, start) {
       continue
     }
     i = after + 1
-    while (/[ \t\n\r\f]/.test(html[i] ?? "")) i++
+    while (isSpace(html[i])) i++
     const quote = html[i]
     let value
     if (quote === "\"" || quote === "'") {
@@ -86,7 +99,8 @@ function readAttrs(html, start) {
       values[found.toLowerCase()] = html.slice(i + 1, close)
       unquoted = false
     } else {
-      value = /[^ \t\n\r\f>]*/y.exec(html.slice(i))?.[0] ?? ""
+      UNQUOTED.lastIndex = i
+      value = UNQUOTED.exec(html)?.[0] ?? ""
       values[found.toLowerCase()] = value
       unquoted = true
     }
@@ -140,9 +154,8 @@ function tokenize(html) {
       i = end < 0 ? html.length : end + 1
       continue
     }
-    const open = /<(\/?)([a-zA-Z][\w:.-]*)/y
-    open.lastIndex = lt
-    const tag = open.exec(html)
+    TAG_OPEN.lastIndex = lt
+    const tag = TAG_OPEN.exec(html)
     // A < that starts no tag is text: a < b
     if (!tag) {
       text("<")
@@ -159,7 +172,7 @@ function tokenize(html) {
     i = end
 
     if (!slash && !selfClosing && RAW.has(name)) {
-      const closing = new RegExp(`</${name}[ \\t\\n\\r\\f]*>`, "ig")
+      const closing = /** @type {RegExp} */ (RAW_CLOSE.get(name))
       closing.lastIndex = i
       const found = closing.exec(html)
       const stop = found ? found.index : html.length
@@ -169,6 +182,25 @@ function tokenize(html) {
     }
   }
   return tokens
+}
+
+/** @type {Map<string, Promise<import("esbuild").TransformResult>>} */
+const transforms = new Map()
+
+/**
+ * esbuild's transform, once per code: every page has the same few inline scripts and styles, from its partials.
+ * @param {string} code
+ * @param {import("esbuild").TransformOptions} options
+ * @returns {Promise<import("esbuild").TransformResult>}
+ */
+function transform(code, options) {
+  const key = `${JSON.stringify(options)}\0${code}`
+  let result = transforms.get(key)
+  if (!result) {
+    result = esbuild.transform(code, options)
+    transforms.set(key, result)
+  }
+  return result
 }
 
 /**
@@ -181,7 +213,7 @@ async function minifyRaw(token) {
   if (!text.trim() || token.name === "textarea" || token.name === "cdata") return text
 
   if (token.name === "style") {
-    const { code } = await esbuild.transform(text, { loader: "css", minify: true })
+    const { code } = await transform(text, { loader: "css", minify: true })
     return code.trim()
   }
   const type = (token.attrs.type ?? "").trim().toLowerCase()
@@ -190,7 +222,7 @@ async function minifyRaw(token) {
     return JSON.stringify(JSON.parse(text)).replace(/</g, "\\u003c")
   }
   if (JS.has(type)) {
-    const { code } = await esbuild.transform(text, { loader: "js", minify: true, ...type === "module" && { format: "esm" } })
+    const { code } = await transform(text, { loader: "js", minify: true, ...type === "module" && { format: "esm" } })
     return code.trim()
   }
   return text
@@ -200,7 +232,7 @@ async function minifyRaw(token) {
  * @param {Token} token
  * @returns {boolean} Never shown: a hidden element, or whitespace
  */
-const isHidden = (token) => token.type === "text" ? !token.text.replace(SPACE, "") : HIDDEN.has(token.name)
+const isHidden = (token) => token.type === "text" ? ONLY_SPACE.test(token.text) : HIDDEN.has(token.name)
 
 /**
  * @param {Token[]} tokens

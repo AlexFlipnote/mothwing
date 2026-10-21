@@ -76,9 +76,14 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
     if (writeIfChanged(path.join(site.out, asset.path), asset.content)) files++
   }
 
-  for (const route of routes) {
+  // Rendered one by one, as they share the state, and minified all at once, esbuild takes many scripts together
+  const pages = await Promise.all(routes.map(route => {
     const html = renderPage(site, state, route, hashed)
-    const finished = hashed && site.minify ? await minifyHtml(html).catch(error => { throw new Error(`${route.source}: ${error.message}`) }) : html
+    return hashed && site.minify ? minifyHtml(html).catch(error => { throw new Error(`${route.source}: ${error.message}`) }) : html
+  }))
+
+  for (const [i, route] of routes.entries()) {
+    const finished = pages[i]
     if (writeIfChanged(path.join(site.out, route.output), site.csp ? withCsp(site.csp, finished) : finished)) written++
 
     for (const [file, content] of Object.entries(route.props.files ?? {})) {
@@ -134,8 +139,8 @@ export async function build(site) {
   const state = buildState()
   await clean(site)
   await copyAssets(site)
-  await buildJS(site, state)
-  await buildSass(site)
+  // Together, esbuild works in its own process while Sass compiles in this one
+  await Promise.all([buildJS(site, state), buildSass(site)])
   // After JS and CSS, since the ?v=hash is made from the built files
   const { routes } = await buildHTML(site, state)
   await writeSiteFiles(site, routes)
