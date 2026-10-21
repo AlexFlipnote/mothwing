@@ -25,15 +25,24 @@ export async function clean(site) {
 }
 
 /**
+ * @param {import("./config.js").Site} site
+ * @param {string} file Absolute path
+ * @returns {boolean} Copied into the build as it is: not in an excluded folder, a page or Sass
+ */
+const isAsset = (site, file) => !isExcluded(site, file) && !/\.(html|scss|sass)$/.test(file)
+
+/**
  * Copies src as it is into the build, leaving out the excluded folders, pages and Sass.
  * @param {import("./config.js").Site} site
+ * @param {string} [file] Just this one, an absolute path, as dev does when it changes
  */
-export async function copyAssets(site) {
+export async function copyAssets(site, file) {
+  if (file) {
+    if (isAsset(site, file)) fs.cpSync(file, path.join(site.out, path.relative(site.src, file)))
+    return
+  }
   log("ASSET", "Copying assets...")
-  fs.cpSync(site.src, site.out, {
-    recursive: true,
-    filter: (file) => !isExcluded(site, file) && !/\.(html|scss|sass)$/.test(file)
-  })
+  fs.cpSync(site.src, site.out, { recursive: true, filter: (file) => isAsset(site, file) })
   log("ASSET", "Done copying assets")
 }
 

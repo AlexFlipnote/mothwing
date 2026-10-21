@@ -160,7 +160,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     else if (rerender)
       render("all")
     else if (!isExcluded(site, file))
-      copyAssets(site).then(reload).catch(err => log("ASSET", err.message))
+      copyAssets(site, file).then(reload).catch(err => log("ASSET", err.message))
   }
 
   fs.watch(site.src, { recursive: true }, (_, filename) => filename && changed(path.join(site.src, filename)))
