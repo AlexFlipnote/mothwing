@@ -2,6 +2,7 @@ import assert from "node:assert/strict"
 import crypto from "node:crypto"
 import fs from "node:fs"
 import http from "node:http"
+import os from "node:os"
 import path from "node:path"
 import { after, before, describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
@@ -325,5 +326,52 @@ describe("dev server", () => {
     served.reload()
     assert.equal((await frame).subarray(2).toString(), "reload")
     socket.destroy()
+  })
+})
+
+describe("routes", () => {
+  /** @type {string[]} */
+  const dirs = []
+  after(() => dirs.forEach(dir => fs.rmSync(dir, { recursive: true, force: true })))
+
+  /**
+   * @param {Record<string, string>} pages Files of a site's pages folder, by their path in it
+   * @returns {Promise<import("../src/routes.js").Route[]>}
+   */
+  async function routesOf(pages) {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-routes-"))
+    dirs.push(dir)
+    for (const [file, text] of Object.entries(pages)) {
+      fs.mkdirSync(path.dirname(path.join(dir, "src/pages", file)), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages", file), text)
+    }
+    const site = resolveConfig({ domain: "example.com" }, dir)
+    return listRoutes(site, { values: {}, files: {}, sources: {} })
+  }
+
+  it("needs every page to have a slug", async () => {
+    for (const item of ["{ n: 1 }", "{ slug: \"\", n: 1 }"]) {
+      await assert.rejects(routesOf({
+        "posts/[page].html": "<p>{{ n }}</p>",
+        "posts/[page].data.js": `export default () => [${item}]`
+      }), /pages\/posts\/\[page\]\.data\.js: page 0 has no slug/)
+    }
+  })
+
+  it("needs a slug that's safe in a URL", async () => {
+    for (const bad of ["Hello World", "a?b", "../../x", ".."]) {
+      await assert.rejects(routesOf({
+        "posts/[page].html": "<p>{{ n }}</p>",
+        "posts/[page].data.js": `export default () => [{ slug: ${JSON.stringify(bad)}, n: 1 }]`
+      }), /page 0's slug .+ isn't safe in a URL/)
+    }
+  })
+
+  it("won't write two pages to the same place", async () => {
+    await assert.rejects(routesOf({
+      "posts/about.html": "<p>About</p>",
+      "posts/[page].html": "<p>{{ n }}</p>",
+      "posts/[page].data.js": "export default () => [{ slug: \"about\", n: 1 }]"
+    }), /makes posts\/about\/index\.html, which pages\/posts\/[\w[\].]+\.html makes too/)
   })
 })

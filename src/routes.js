@@ -41,11 +41,18 @@ const pageOutput = (site, file) => file === site.notFound || file.endsWith("inde
 export const outputUrl = (output) => "/" + output.replace(/(^|\/)index\.html$/, "$1")
 
 /**
+ * One part of a URL, not starting with a dot, so not . or .. either
+ * @param {string} slug
+ */
+const urlSafe = (slug) => /^[\w-][\w.-]*$/.test(slug)
+
+/**
  * Every page, each folder's index.html first, so the front page leads the sitemap and a list comes before its items.
  * - about.html is one page. Its .data.js, when it has one, default exports `() => values`
  * - [projects.name].html is a page per item of the data folder's projects, by its name, the item is {{ page }}
  * - [name].html is a page per item its .data.js returns, each `{ slug, ...values }`
  * A .data.js can return a `sources` list (relative to src) of the files it's made from, for the sitemap's dates.
+ * Two pages can't be written to the same place.
  * @param {import("./config.js").Site} site
  * @param {import("./data.js").SiteData} siteData
  * @param {Set<string>} [only] Just these pages, relative to the pages folder
@@ -86,13 +93,23 @@ export async function listRoutes(site, siteData, only) {
     }
     if (!Array.isArray(data)) throw new Error(`${pagesDir}/${dataFile}: a [name].html page needs a list of pages`)
     const seen = new Set()
-    for (const { slug, sources = [], ...props } of data) {
+    for (const [i, { slug, sources = [], ...props }] of data.entries()) {
+      if (slug == null || slug === "") throw new Error(`${pagesDir}/${dataFile}: page ${i} has no slug`)
+      if (!urlSafe(String(slug))) throw new Error(`${pagesDir}/${dataFile}: page ${i}'s slug "${slug}" isn't safe in a URL, slug() from mothwing/html makes it so`)
       if (seen.has(slug)) throw new Error(`${pagesDir}/${dataFile}: two pages are both "${slug}"`)
       seen.add(slug)
       const output = source.replace(/\[\w+\]\.html$/, `${slug}/index.html`)
       // Dated by its data alone, a template tweak would otherwise date thousands of pages at once
       routes.push({ source, output, url: outputUrl(output), props, sources: sources.length ? sources : own })
     }
+  }
+
+  // A [name].html page can land on another file's page, which would quietly win
+  const outputs = new Map()
+  for (const { source, output } of routes) {
+    const other = outputs.get(output)
+    if (other && other !== source) throw new Error(`${pagesDir}/${source}: makes ${output}, which ${pagesDir}/${other} makes too`)
+    outputs.set(output, source)
   }
   return routes
 }
@@ -118,7 +135,8 @@ function pagesFromData(site, siteData, source, list, key) {
     if (item?.[key] === undefined) throw new Error(`${from}: item ${i} of ${list} has no ${key}`)
     // A value that's fine in a URL already is kept as it is, so existing links like /docs/create_ssh_key/ keep working
     const value = String(item[key])
-    const pageSlug = /^[\w.-]+$/.test(value) ? value : slug(value)
+    const pageSlug = urlSafe(value) ? value : slug(value)
+    if (!pageSlug) throw new Error(`${from}: item ${i} of ${list} has an empty ${key}`)
     if (seen.has(pageSlug)) throw new Error(`${from}: two of ${list} are both "${pageSlug}"`)
     seen.add(pageSlug)
     const output = source.replace(/\[[\w.]+\]\.html$/, `${pageSlug}/index.html`)

@@ -15,7 +15,7 @@ export default () => ({ updated: new Date().toISOString() })
 
 | Key | |
 | --- | --- |
-| `slug` | The page's URL part |
+| `slug` | The page's URL part: letters, digits, `_`, `-` and `.`, not starting with a dot. `slug()` makes any name into one |
 | `sources` | The files its content comes from, relative to `src/`, which the sitemap dates the page by |
 | `files` | More files to write, by their path in the build: `{ "rows/list.html": "..." }` |
 
