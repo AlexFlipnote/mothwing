@@ -82,6 +82,9 @@ describe("loops and conditions", () => {
     assert.throws(() => run("<x-each items=\"title\" as=\"t\"></x-each>", { title: "x" }), /<x-each items="title"> isn't a list/)
     assert.throws(() => run("<x-if value=\"projets.url\"></x-if>", { projects }), /<x-if> has nothing called projets/)
     assert.throws(() => run("<x-each items=\"projects\"></x-each>", { projects }), /<x-each> needs items="\.\.\." and as="\.\.\."/)
+    assert.throws(() => run("<x-if value=\"a\" nto=\"b\"></x-if>", { a: 1 }), /page\.html: <x-if> doesn't take nto, only value, not/)
+    assert.throws(() => run("<x-each items=\"projects\" as=\"p\" idx=\"i\"></x-each>", { projects }), /<x-each> doesn't take idx, only items, as, index/)
+    assert.throws(() => run("<x-if value=\"a\" not=\"a\"></x-if>", { a: 1 }), /<x-if> takes value="\.\.\." or not="\.\.\.", not both/)
   })
 
   it("points out a placeholder where a name goes", () => {
@@ -211,8 +214,9 @@ describe("asset", () => {
 
 describe("includeHtml", () => {
   it("says what's wrong with a partial", () => {
-    assert.throws(() => includeHtml(process.cwd(), "<x-html str=\"a.html\"/>", "page.html"), /page\.html: <x-html> needs a src="\.\.\."/)
+    assert.throws(() => includeHtml(process.cwd(), "<x-html/>", "page.html"), /page\.html: <x-html> needs a src="\.\.\."/)
     assert.throws(() => includeHtml(process.cwd(), "<x-html src=\"missing.html\"/>", "page.html"), /page\.html: <x-html> can't find missing\.html/)
+    assert.throws(() => includeHtml(process.cwd(), "<x-html src=\"a.html\" scr=\"b.html\"/>", "page.html"), /page\.html: <x-html> doesn't take scr, only src/)
   })
 })
 

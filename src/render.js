@@ -3,7 +3,7 @@ import fs from "fs"
 import path from "path"
 import { posix } from "./log.js"
 import { seoTags } from "./seo.js"
-import { includeHtml, parseAttrs, parseTemplate, renderNodes } from "./template.js"
+import { includeHtml, onlyAttrs, parseAttrs, parseTemplate, renderNodes } from "./template.js"
 
 /*
   Tags, usable in any page or partial. Paths start at src, which the build mirrors:
@@ -81,8 +81,12 @@ function coreTags(site, state, from, hashed) {
   }
 
   return {
-    "x-seo": ({ attrs, route }) => seoTags(site, route, attrs),
+    "x-seo": ({ attrs, route }) => {
+      onlyAttrs(from, "x-seo", attrs, ["title", "description", "image", "image-alt", "image-size", "section", "name"])
+      return seoTags(site, route, attrs)
+    },
     "x-js": ({ attrs }) => {
+      onlyAttrs(from, "x-js", attrs, ["src", "module", "preload"])
       const file = sitePath(need("x-js", attrs, "src"))
       const preload = attrs.preload ? sitePath(need("x-js", attrs, "preload")) : null
       // Only known when the JS was built in this process, so not on dev renders
@@ -98,7 +102,10 @@ function coreTags(site, state, from, hashed) {
         `<script${attrs.module ? " type=\"module\"" : ""} src="${assetUrl("x-js", file)}"></script>`
       ]
     },
-    "x-css": ({ attrs }) => `<link href="${assetUrl("x-css", sitePath(need("x-css", attrs, "src")))}" type="text/css" rel="stylesheet">`
+    "x-css": ({ attrs }) => {
+      onlyAttrs(from, "x-css", attrs, ["src"])
+      return `<link href="${assetUrl("x-css", sitePath(need("x-css", attrs, "src")))}" type="text/css" rel="stylesheet">`
+    }
   }
 }
 

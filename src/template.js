@@ -10,6 +10,18 @@ import { posix } from "./log.js"
 export const parseAttrs = (attrs) => Object.fromEntries([...attrs.matchAll(/([\w-]+)(?:="([^"]*)")?/g)].map(([, name, value]) => [name, value ?? true]))
 
 /**
+ * Fails on an attribute the tag doesn't take, so a typo like vlaue="..." isn't quietly ignored.
+ * @param {string} from For errors, the page's file
+ * @param {string} tag
+ * @param {Record<string, string | true>} attrs
+ * @param {string[]} takes
+ */
+export function onlyAttrs(from, tag, attrs, takes) {
+  const other = Object.keys(attrs).find(name => !takes.includes(name))
+  if (other) throw new Error(`${from}: <${tag}> doesn't take ${other}, only ${takes.join(", ")}`)
+}
+
+/**
  * Indents every line of some HTML, but those inside a <pre> or <textarea>, whose spaces are part of what they show.
  * Empty lines are left empty.
  * @param {string} html
@@ -43,7 +55,9 @@ export function includeHtml(src, html, from, used = new Set(), depth = 0) {
   if (depth > 10) throw new Error(`${from}: <x-html> nested too deep, is a partial including itself?`)
 
   return html.replace(/([ \t]*)<x-html((?:\s+[\w-]+(?:="[^"]*")?)*)\s*\/?>/g, (_, space, attrs, offset, page) => {
-    const file = parseAttrs(attrs).src
+    const parsed = parseAttrs(attrs)
+    onlyAttrs(from, "x-html", parsed, ["src"])
+    const file = parsed.src
     if (typeof file !== "string") throw new Error(`${from}: <x-html> needs a src="..."`)
     const partial = path.join(src, file.replace(/^\//, ""))
     if (!fs.existsSync(partial)) throw new Error(`${from}: <x-html> can't find ${file}`)
@@ -221,6 +235,7 @@ export function renderNodes(nodes, values, context, dedentBy = 0) {
 
     const { attrs } = node
     if (node.type === "x-each") {
+      onlyAttrs(from, "x-each", attrs, ["items", "as", "index"])
       if (typeof attrs.items !== "string" || typeof attrs.as !== "string") throw new Error(`${from}: <x-each> needs items="..." and as="..."`)
       const items = known("x-each", "items", attrs.items)
       if (!Array.isArray(items)) throw new Error(`${from}: <x-each items="${attrs.items}"> isn't a list`)
@@ -235,8 +250,10 @@ export function renderNodes(nodes, values, context, dedentBy = 0) {
       }, context, dedentBy + node.dedent)).join("")
     }
 
+    onlyAttrs(from, "x-if", attrs, ["value", "not"])
     const name = attrs.value ?? attrs.not
     if (typeof name !== "string") throw new Error(`${from}: <x-if> needs value="..." or not="..."`)
+    if (attrs.value !== undefined && attrs.not !== undefined) throw new Error(`${from}: <x-if> takes value="..." or not="...", not both`)
     const shown = truthy(known("x-if", attrs.value !== undefined ? "value" : "not", name)) === (attrs.value !== undefined)
     return shown ? renderNodes(node.children, values, context, dedentBy + node.dedent) : ""
   }).join("")
