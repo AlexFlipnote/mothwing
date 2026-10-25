@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <url><loc>https://mothwing.dev/</loc><lastmod>2026-10-19</lastmod></url>
+  <url><loc>https://mothwing.dev/</loc><lastmod>2026-10-25</lastmod></url>
   <url><loc>https://mothwing.dev/api/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/ActiveLink/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/asset/</loc><lastmod>2026-10-19</lastmod></url>
@@ -29,10 +29,11 @@
   <url><loc>https://mothwing.dev/api/TagFunction/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/Transform/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/unescapeHtml/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/data/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/loops/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/pages/</loc><lastmod>2026-10-24</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/tags/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/examples/making-it-yours/</loc><lastmod>2026-10-19</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/data/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/loops/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/pages/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/tags/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/making-it-yours/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/examples/going-live/</loc><lastmod>2026-10-25</lastmod></url>
 </urlset>
