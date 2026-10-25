@@ -3,10 +3,10 @@
   <url><loc>https://mothwing.dev/</loc><lastmod>2026-10-25</lastmod></url>
   <url><loc>https://mothwing.dev/api/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/ActiveLink/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/api/asset/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/api/Asset-type/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/api/build/</loc><lastmod>2026-10-21</lastmod></url>
-  <url><loc>https://mothwing.dev/api/clean/</loc><lastmod>2026-10-21</lastmod></url>
+  <url><loc>https://mothwing.dev/api/asset/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/api/Asset-type/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/api/build/</loc><lastmod>2026-10-25</lastmod></url>
+  <url><loc>https://mothwing.dev/api/clean/</loc><lastmod>2026-10-25</lastmod></url>
   <url><loc>https://mothwing.dev/api/Config/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/defineConfig/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/dev/</loc><lastmod>2026-10-21</lastmod></url>
@@ -18,10 +18,10 @@
   <url><loc>https://mothwing.dev/api/loadConfig/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/log/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/raw/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/api/renderSite/</loc><lastmod>2026-10-21</lastmod></url>
+  <url><loc>https://mothwing.dev/api/renderSite/</loc><lastmod>2026-10-25</lastmod></url>
   <url><loc>https://mothwing.dev/api/resolveConfig/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/RobotsConfig/</loc><lastmod>2026-10-19</lastmod></url>
-  <url><loc>https://mothwing.dev/api/Route/</loc><lastmod>2026-10-24</lastmod></url>
+  <url><loc>https://mothwing.dev/api/Route/</loc><lastmod>2026-10-25</lastmod></url>
   <url><loc>https://mothwing.dev/api/SeoConfig/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/Site/</loc><lastmod>2026-10-19</lastmod></url>
   <url><loc>https://mothwing.dev/api/SitemapConfig/</loc><lastmod>2026-10-19</lastmod></url>
