@@ -134,9 +134,6 @@ export async function buildSass(site) {
   log("CSS", "Done building the CSS")
 }
 
-// asset() makes a file for the build, which a page links to by its value: {{ search.index }} -> /search.json?v=hash.
-// Node only, it hashes with crypto, so it's in "mothwing" and not in "mothwing/html", which runs in browsers too.
-
 /**
  * How every hashed link is made, the JS and CSS ones and asset()'s alike.
  * @param {string} file Its path in the build: "/search.json"

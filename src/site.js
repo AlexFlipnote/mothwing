@@ -98,7 +98,6 @@ export async function writeSiteFiles(site, routes, dated = true) {
     /** @param {{ url: string, lastmod: string | null | false }[]} pages */
     const urlset = (pages) => xml("urlset", pages.map(p => entry("url", `${site.url}${p.url}`, p.lastmod)))
 
-    // Without sections, it's one sitemap.xml with every page, all a small site needs
     if (!site.sitemap.sections.length) {
       fs.writeFileSync(path.join(site.out, "sitemap.xml"), urlset(sitemaps.get("pages") ?? []))
     } else {

@@ -128,7 +128,7 @@ export function fillPlaceholders(html, values, from, used = new Set()) {
 
 /**
  * A page's HTML split at its <x-each> and <x-if> blocks. A text that's `lineStart` begins a line of the page, a block
- * that's `alone` is the whole of its line, `<x-if ...>...</x-if>` and nothing else.
+ * that's `alone` is the whole of its line.
  * @typedef {{ type: "text", text: string, lineStart: boolean }
  *   | { type: "x-each" | "x-if", attrs: Record<string, string | true>, dedent: number, alone: boolean, children: Node[] }} Node
  */
@@ -261,7 +261,7 @@ export function renderNodes(nodes, values, context, dedentBy = 0) {
     return shown ? renderNodes(node.children, values, context, dedentBy + node.dedent) : ""
   })
 
-  // A block that's the whole of its line and shows nothing takes its line with it, as one on lines of its own does
+  // A block alone on its line that shows nothing takes the line with it
   nodes.forEach((node, i) => {
     if (node.type === "text" || !node.alone || parts[i]) return
     if (i > 0) parts[i - 1] = parts[i - 1].replace(/[ \t]*$/, "")

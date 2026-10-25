@@ -140,8 +140,7 @@ function pagesFromData(site, siteData, source, list, key) {
     if (seen.has(pageSlug)) throw new Error(`${from}: two of ${list} are both "${pageSlug}"`)
     seen.add(pageSlug)
     const output = source.replace(/\[[\w.]+\]\.html$/, `${pageSlug}/index.html`)
-    // Dated by its data alone, a template tweak would otherwise date every page at once. An item can say which of the
-    // data it's made from, so a change to one doesn't date them all
+    // An item can say which of the data it's made from, so a change to one doesn't date them all
     const sources = Array.isArray(item.sources) && item.sources.length ? item.sources : dataSources
     return { source, output, url: outputUrl(output), props: { page: item }, sources }
   })
