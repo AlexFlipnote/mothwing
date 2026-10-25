@@ -1,4 +1,4 @@
-import { asset } from "../../../../../src/asset.js"
+import { asset } from "../../../../../src/assets.js"
 
 export default () => [
   { slug: "first", title: "First", body: "<p>One</p>\n<p>Two</p>", text: asset("posts/first.txt", "One\nTwo") },

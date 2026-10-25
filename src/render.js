@@ -1,6 +1,6 @@
-import crypto from "crypto"
 import fs from "fs"
 import path from "path"
+import { hashedUrl } from "./assets.js"
 import { posix } from "./log.js"
 import { seoTags } from "./seo.js"
 import { includeHtml, onlyAttrs, parseAttrs, parseTemplate, renderNodes } from "./template.js"
@@ -74,7 +74,7 @@ function coreTags(site, state, from, hashed) {
     if (!url) {
       const built = path.join(site.out, file)
       if (!fs.existsSync(built)) throw new Error(`${from}: <${tag}> can't find ${file} in the build`)
-      url = `${file}?v=${crypto.createHash("md5").update(fs.readFileSync(built)).digest("hex").slice(0, 8)}`
+      url = hashedUrl(file, fs.readFileSync(built))
       state.assetUrls.set(file, url)
     }
     return url
