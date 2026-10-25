@@ -72,6 +72,13 @@ describe("loops and conditions", () => {
     assert.equal(run("<x-if value=\"list\">full</x-if><x-if not=\"list\">empty</x-if>", { list: [] }).html, "empty")
   })
 
+  it("takes the line of a block that's on one line of its own and shows nothing", () => {
+    const html = "<li>\n  <x-if value=\"p.url\"><a href=\"{{ p.url }}\">{{ p.name }}</a></x-if>\n  <x-if not=\"p.url\">{{ p.name }}</x-if>\n</li>"
+    assert.equal(run(html, { p: projects[0] }).html, "<li>\n  <a href=\"/hexclock/\">Hexclock</a>\n</li>")
+    assert.equal(run(html, { p: projects[1] }).html, "<li>\n  Tom &amp; Jerry\n</li>")
+    assert.equal(run("<x-if value=\"a\">x</x-if>\n<p>b</p>", { a: false }).html, "<p>b</p>")
+  })
+
   it("notes the names a page used", () => {
     assert.deepEqual([...run("<x-each items=\"projects\" as=\"p\">{{ p.name }}</x-each>{{ title }}", { projects, title: "x" }).used].sort(), ["p", "projects", "title"])
   })

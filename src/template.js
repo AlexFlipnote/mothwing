@@ -127,9 +127,10 @@ export function fillPlaceholders(html, values, from, used = new Set()) {
 }
 
 /**
- * A page's HTML split at its <x-each> and <x-if> blocks. A text that's `lineStart` begins a line of the page.
+ * A page's HTML split at its <x-each> and <x-if> blocks. A text that's `lineStart` begins a line of the page, a block
+ * that's `alone` is the whole of its line, `<x-if ...>...</x-if>` and nothing else.
  * @typedef {{ type: "text", text: string, lineStart: boolean }
- *   | { type: "x-each" | "x-if", attrs: Record<string, string | true>, dedent: number, children: Node[] }} Node
+ *   | { type: "x-each" | "x-if", attrs: Record<string, string | true>, dedent: number, alone: boolean, children: Node[] }} Node
  */
 
 // A block tag on a line of its own takes its line with it, so it leaves no empty line behind. Formatters like
@@ -148,7 +149,7 @@ const indentOf = (text) => Math.min(...text.split("\n").filter(line => line.trim
  * @returns {Node[]}
  */
 export function parseTemplate(html, from) {
-  /** @type {{ node: Node & { type: "x-each" | "x-if" }, indent: string | null, bodyStart: number }[]} */
+  /** @type {{ node: Node & { type: "x-each" | "x-if" }, indent: string | null, start: number, bodyStart: number }[]} */
   const open = []
   /** @type {Node[]} */
   const root = []
@@ -169,9 +170,9 @@ export function parseTemplate(html, from) {
 
     const opening = lineOpen ?? inlineOpen
     if (opening) {
-      const node = { type: /** @type {"x-each" | "x-if"} */ (opening), attrs: parseAttrs(lineAttrs ?? inlineAttrs ?? ""), dedent: 0, children: [] }
+      const node = { type: /** @type {"x-each" | "x-if"} */ (opening), attrs: parseAttrs(lineAttrs ?? inlineAttrs ?? ""), dedent: 0, alone: false, children: [] }
       children().push(node)
-      open.push({ node, indent: lineOpen ? lineIndent : null, bodyStart: last })
+      open.push({ node, indent: lineOpen ? lineIndent : null, start, bodyStart: last })
       continue
     }
 
@@ -181,6 +182,8 @@ export function parseTemplate(html, from) {
     if (block.node.type !== closing) throw new Error(`${from}: </${closing}> where <${block.node.type}> should be closed`)
     // A block on lines of its own is indented a step deeper than where its output goes
     if (block.indent !== null) block.node.dedent = Math.max(0, indentOf(html.slice(block.bodyStart, start)) - block.indent.length)
+    else block.node.alone = !html.slice(block.start, last).includes("\n")
+      && /(^|\n)[ \t]*$/.test(html.slice(0, block.start)) && /^[ \t]*(\r?\n|$)/.test(html.slice(last))
   }
 
   if (open.length) throw new Error(`${from}: <${open[0].node.type}> is never closed`)
@@ -230,7 +233,7 @@ export function renderNodes(nodes, values, context, dedentBy = 0) {
     return value
   }
 
-  return nodes.map(node => {
+  const parts = nodes.map(node => {
     if (node.type === "text") return fillPlaceholders(dedent(node, dedentBy), values, from, context.used)
 
     const { attrs } = node
@@ -256,5 +259,13 @@ export function renderNodes(nodes, values, context, dedentBy = 0) {
     if (attrs.value !== undefined && attrs.not !== undefined) throw new Error(`${from}: <x-if> takes value="..." or not="...", not both`)
     const shown = truthy(known("x-if", attrs.value !== undefined ? "value" : "not", name)) === (attrs.value !== undefined)
     return shown ? renderNodes(node.children, values, context, dedentBy + node.dedent) : ""
-  }).join("")
+  })
+
+  // A block that's the whole of its line and shows nothing takes its line with it, as one on lines of its own does
+  nodes.forEach((node, i) => {
+    if (node.type === "text" || !node.alone || parts[i]) return
+    if (i > 0) parts[i - 1] = parts[i - 1].replace(/[ \t]*$/, "")
+    if (i < parts.length - 1) parts[i + 1] = parts[i + 1].replace(/^[ \t]*\r?\n/, "")
+  })
+  return parts.join("")
 }
