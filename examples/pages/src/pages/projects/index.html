@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Projects</title>
+  </head>
+  <body>
+    <h1>Projects</h1>
+    <ul>
+      <x-each items="projects" as="project">
+        <li><a href="/projects/{{ project.id }}/">{{ project.name }}</a></li>
+      </x-each>
+    </ul>
+  </body>
+</html>

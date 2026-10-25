@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Projects</title>
+  </head>
+  <body>
+    <ul>
+      <x-each items="projects" as="project" index="i">
+        <li data-position="{{ i }}">
+          <x-if value="project.url"><a href="{{ project.url }}">{{ project.name }}</a></x-if>
+          <x-if not="project.url">{{ project.name }}</x-if>
+        </li>
+      </x-each>
+    </ul>
+  </body>
+</html>

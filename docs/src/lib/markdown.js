@@ -5,7 +5,8 @@ const marked = new Marked({
     if (token.type !== "link") return
     token.href = token.href
       .replace(/^https:\/\/mothwing\.dev\//, "/")
-      .replace(/^([\w-]+)\.md(#.*)?$/, "/examples/$1/$2")
+      // An example's link to another, ../data/, as it is on GitHub
+      .replace(/^\.\.\/([\w-]+)\/(#.*)?$/, "/examples/$1/$2")
   }
 })
 

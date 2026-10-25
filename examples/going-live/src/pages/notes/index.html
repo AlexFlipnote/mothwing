@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="Notes" description="Every moth with a note of its own."/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <h1>Notes</h1>
+    <ul>
+      <x-each items="notes" as="note">
+        <li><a href="/notes/{{ note.id }}/">{{ note.name }}</a></li>
+      </x-each>
+    </ul>
+  </body>
+</html>

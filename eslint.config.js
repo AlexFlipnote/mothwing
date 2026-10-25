@@ -38,14 +38,14 @@ export default [
   },
 
   {
-    files: ["test/fixture/src/js/**/*.js"],
+    files: ["test/fixture/src/js/**/*.js", "examples/*/src/js/**/*.js"],
     languageOptions: { globals: globals.browser }
   },
 
   {
     ignores: [
       "eslint.config.js", "docs/dist/", "test/fixture/dist/",
-      "test/fixture/dist-bare/", "test/fixture/dist-dev/", "types/"
+      "test/fixture/dist-bare/", "test/fixture/dist-dev/", "examples/*/dist/", "types/"
     ]
   }
 ]

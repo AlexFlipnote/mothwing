@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ site.name }}</title>
+  </head>
+  <body>
+    <h1>{{ home.title }}</h1>
+    {{{ home.intro }}}
+
+    <select>
+      <x-each items="groups" as="group">
+        <option value="{{ group.slug }}" selected="{{ group.selected }}">{{ group.name }}</option>
+      </x-each>
+    </select>
+
+    <section hidden="{{ events.none }}">
+      <h2>Coming up</h2>
+      <x-each items="events.list" as="event">
+        <p><time>{{ event.date }}</time> {{ event.name }}</p>
+      </x-each>
+    </section>
+
+    <input type="search" data-index="{{ search.index }}">
+    <footer>{{ site.name }}, {{ site.year }}</footer>
+  </body>
+</html>

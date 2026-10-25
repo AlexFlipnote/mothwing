@@ -375,3 +375,19 @@ describe("routes", () => {
     }), /makes posts\/about\/index\.html, which pages\/posts\/[\w[\].]+\.html makes too/)
   })
 })
+
+describe("examples", () => {
+  const examples = path.join(ROOT, "../../examples")
+  const out = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-examples-"))
+  after(() => fs.rmSync(out, { recursive: true, force: true }))
+
+  for (const name of fs.readdirSync(examples).filter(name => fs.statSync(path.join(examples, name)).isDirectory())) {
+    it(`builds ${name}, with every tag and placeholder filled`, async () => {
+      const site = await loadConfig(path.join(examples, name))
+      await quietBuild({ ...site, out: path.join(out, name) })
+      const pages = fs.readdirSync(path.join(out, name), { recursive: true }).map(String).filter(file => file.endsWith(".html"))
+      assert.ok(pages.includes("index.html"))
+      for (const page of pages) assert.doesNotMatch(fs.readFileSync(path.join(out, name, page), "utf8"), /\{\{|<\/?x-/, page)
+    })
+  }
+})

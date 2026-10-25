@@ -1,0 +1,4 @@
+[
+  { "id": "hexclock", "name": "Hexclock", "about": "A clock that shows the time as a colour." },
+  { "id": "moth_notes", "name": "Moth Notes", "about": "Notes on the moths that visit the porch light." }
+]

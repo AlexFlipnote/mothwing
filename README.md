@@ -87,3 +87,4 @@ The rest of what mothwing does, part by part. They're in [examples/](examples), 
 - [Pages](https://mothwing.dev/examples/pages/): URLs, a page per item, and `.data.js`
 - [Tags](https://mothwing.dev/examples/tags/): the tags mothwing builds into HTML
 - [Making it yours](https://mothwing.dev/examples/making-it-yours/): your own tags, transforms and hooks
+- [Going live](https://mothwing.dev/examples/going-live/): the sitemap, robots.txt, CSP and the rest of what's turned on to publish

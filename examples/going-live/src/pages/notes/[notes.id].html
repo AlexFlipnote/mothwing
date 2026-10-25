@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <x-html src="partials/head.html"/>
+    <x-seo title="{{ page.name }}" description="{{ page.note }}" section="Notes" name="{{ page.name }}"/>
+  </head>
+  <body>
+    <x-html src="partials/nav.html"/>
+    <h1>{{ page.name }}</h1>
+    <p>{{ page.note }}</p>
+  </body>
+</html>
