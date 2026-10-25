@@ -2,14 +2,7 @@
   "name": "mothwing",
   "version": "0.1.4",
   "description": "Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing",
-  "keywords": [
-    "static-site-generator",
-    "ssg",
-    "html",
-    "esbuild",
-    "csp",
-    "sitemap"
-  ],
+  "keywords": ["static-site-generator", "ssg", "html", "esbuild", "csp", "sitemap"],
   "author": "AlexFlipnote",
   "license": "MIT",
   "repository": {
@@ -52,7 +45,7 @@
     "docs:dev": "node bin/mothwing.js dev --root docs"
   },
   "dependencies": {
-    "esbuild": "0.28.1"
+    "esbuild": "0.28.2"
   },
   "peerDependencies": {
     "sass": "^1.93.3"
