@@ -108,12 +108,14 @@ th, td {
 }
 
 th { white-space: nowrap; }
-td:nth-child(2) { width: 35%; }
+td:nth-child(2):not(:last-child) { width: 35%; }
 
 @media (max-width: $mobile) {
   tr { display: grid; border-top: 1px solid var(--line); padding: .5rem 0; }
 
   th, td { border: 0; padding: .1rem 0; width: auto !important; }
+
+  thead { display: none; }
 }
 
 .hero {
