@@ -67,7 +67,9 @@ export async function serve(site, context, { host, port }) {
     const folder = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname)
     if (folder.endsWith("/") && !fs.existsSync(path.join(site.out, folder, "index.html"))) return sendNotFound(req, res)
 
-    const proxy = http.request({ host: "127.0.0.1", port: esbuild.port, path: req.url, method: req.method, headers: req.headers }, (from) => {
+    // esbuild answers only its own host, a phone on the LAN asking for 192.168.x.x:8080 would get a HTTP 403
+    const headers = { ...req.headers, host: `127.0.0.1:${esbuild.port}` }
+    const proxy = http.request({ host: "127.0.0.1", port: esbuild.port, path: req.url, method: req.method, headers }, (from) => {
       const status = from.statusCode ?? 502
       if (status === 404) {
         from.resume()

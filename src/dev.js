@@ -140,12 +140,14 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
   /** @param {string} file Absolute path */
   const changed = (file) => {
     const relative = posix(path.relative(site.src, file))
-    if (!fs.existsSync(file)) {
+    // One stat rather than an exists check first, an editor's temp file can be renamed away in between
+    const stat = fs.statSync(file, { throwIfNoEntry: false })
+    if (!stat) {
       clearTimeout(restart)
       restart = setTimeout(() => rebuildAll().catch(err => log("WATCH", err.message)), 200)
       return
     }
-    if (fs.statSync(file).isDirectory()) return
+    if (stat.isDirectory()) return
 
     const page = relative.startsWith(`${pagesDir}/`) && relative.slice(pagesDir.length + 1).replace(/\.data\.js$/, ".html")
     const using = pagesUsing(deps, relative)
