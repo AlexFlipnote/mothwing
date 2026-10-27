@@ -29,7 +29,6 @@ export default () => {
       summary: plain(first),
       // The title is the page's own <h1>
       html: markdown(text.replace(/^# .+\n/, "")),
-      // Relative to docs/src, the example's files but not its build
       sources: fs.readdirSync(path.join(EXAMPLES, name), { recursive: true, encoding: "utf8" })
         .map(file => file.replaceAll("\\", "/"))
         .filter(file => !file.startsWith("dist/") && fs.statSync(path.join(EXAMPLES, name, file)).isFile())

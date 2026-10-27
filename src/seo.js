@@ -31,7 +31,6 @@ export function seoTags(site, route, attrs) {
     return typeof value === "string" ? value : undefined
   }
   const { maxTitle, maxDescription } = site.seo
-  // The config's text as HTML, like the tag's attributes
   const siteName = escapeHtml(site.seo.siteName)
   const locale = escapeHtml(site.seo.locale)
   const pageTitle = attr("title")

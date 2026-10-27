@@ -26,7 +26,7 @@ const commands = {
   html: async (site) => {
     const pages = flag("pages")
     const rendered = await renderSite(site, { only: pages ? new Set(pages.split(",")) : undefined })
-    // Run by dev, which keeps track of what the pages are made from, and reloads the browser if any changed
+    // Read by dev, to know what each page is made from
     process.send?.(rendered)
   }
 }

@@ -8,7 +8,7 @@ export default () => ({ name: "Moth Notes", year: new Date().getFullYear() })
 
 ```html
 <h1>{{ home.title }}</h1>                          <!-- as text, escaped -->
-{{{ home.intro }}}                                 <!-- as HTML, every line indented like the placeholder -->
+{{{ home.intro }}}                                 <!-- as HTML -->
 <footer>{{ site.name }}, {{ site.year }}</footer>  <!-- into objects with dots -->
 ```
 

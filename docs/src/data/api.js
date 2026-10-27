@@ -1,7 +1,4 @@
-/*
-  The API reference, read from mothwing's own source by the TypeScript compiler: what the package exports, with the
-  types and JSDoc it has in src. Each export is an item of {{ api }}, pages/api/[api.slug].html makes a page of each.
-*/
+/* The API reference, read from src by the TypeScript compiler: each export is an item of {{ api }} */
 import path from "path"
 import { fileURLToPath } from "url"
 import ts from "typescript"
@@ -10,10 +7,8 @@ import { escapeHtml } from "mothwing/html"
 const root = path.resolve(fileURLToPath(import.meta.url), "../../../..")
 const docsSrc = path.join(root, "docs/src")
 
-// The package's entry points, as package.json exports them
 const ENTRIES = { "mothwing": "src/index.js", "mothwing/html": "src/html.js" }
 
-/** What a kind of export is called on its page */
 const KINDS = { function: "Function", class: "Class", type: "Type", callback: "Callback type" }
 
 // Types TypeScript has built in, coloured apart from the ones named in mothwing or Node
@@ -201,7 +196,6 @@ function read() {
       summary: summary(docs(symbol)) || `${KINDS[kind]} ${symbol.name}, from ${module}`,
       file,
       line: sourceFile.getLineAndCharacterOfPosition(declaration.getStart()).line + 1,
-      // Each page is dated by the file it documents, relative to docs/src
       sources: [path.relative(docsSrc, sourceFile.fileName).replaceAll("\\", "/")]
     })
 

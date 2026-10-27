@@ -5,7 +5,7 @@
 $antenna: #ff4442;
 $body: #14bae4;
 
-// A mix of the two, rounded to whole channels so it's written as hex, not rgb() in fractions of a percent
+// Rounded to whole channels, so it is written as hex
 @function mix($a, $b, $weight) {
   $mixed: color.mix($a, $b, $weight);
   @return rgb(
@@ -131,7 +131,6 @@ td:nth-child(2):not(:last-child) { width: 35%; }
 
 h3 { margin-top: 1.5rem; font-size: 1rem; }
 
-// The examples' list, a title and its first paragraph each
 .examples {
   padding: 0;
   list-style: none;
@@ -141,7 +140,6 @@ h3 { margin-top: 1.5rem; font-size: 1rem; }
   p { margin: .2rem 0 0; color: var(--muted); }
 }
 
-// Previous and next under an example
 .pager {
   display: flex;
   gap: 1rem;
@@ -174,7 +172,6 @@ h3 { margin-top: 1.5rem; font-size: 1rem; }
 
 pre.signature, td code, .returns code, .members { @include tokens; }
 
-// Every export at a glance, a column per group
 .contents {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
@@ -195,7 +192,6 @@ pre.signature, td code, .returns code, .members { @include tokens; }
 
 section { scroll-margin-top: 1rem; }
 
-// The reference's groups: Functions, Classes, ...
 section > h2 {
   margin-top: 2.5rem;
   font-size: 1.4rem;

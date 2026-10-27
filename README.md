@@ -18,7 +18,7 @@ I did try them, and others, before making my own. They're good at what they do, 
 ## Getting started
 ```sh
 npm install --save-dev mothwing
-npx mothwing dev     # serves on http://localhost:8080, a change renders just the pages it's in and reloads the browser
+npx mothwing dev     # dev server on http://localhost:8080
 npx mothwing build   # production build into dist/
 ```
 
@@ -58,7 +58,7 @@ An option mothwing doesn't know fails the build either way.
 A page is HTML with a few tags of mothwing's in it, which turn into plain HTML as it builds:
 
 ```html
-<!-- src/pages/index.html, the page at / -->
+<!-- src/pages/index.html -->
 <!doctype html>
 <html lang="en">
   <head>
