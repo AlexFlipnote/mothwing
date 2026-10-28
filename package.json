@@ -1,8 +1,15 @@
 {
   "name": "mothwing",
-  "version": "0.1.7",
+  "version": "0.2.0",
   "description": "Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing",
-  "keywords": ["static-site-generator", "ssg", "html", "esbuild", "csp", "sitemap"],
+  "keywords": [
+    "static-site-generator",
+    "ssg",
+    "html",
+    "esbuild",
+    "csp",
+    "sitemap"
+  ],
   "author": "AlexFlipnote",
   "license": "MIT",
   "repository": {
