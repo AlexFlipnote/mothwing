@@ -505,6 +505,87 @@ describe("examples", () => {
   }
 })
 
+/**
+ * Builds a site of its own, made of these files in src.
+ * @param {Record<string, string>} files
+ * @param {import("../src/config.js").Config} [config]
+ * @returns {Promise<string[]>} What it logged
+ */
+async function buildFiles(files, config = {}) {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-links-"))
+  /** @type {string[]} */
+  const logs = []
+  const log = console.log
+  console.log = (msg) => logs.push(msg)
+  try {
+    for (const [file, content] of Object.entries(files)) {
+      fs.mkdirSync(path.dirname(path.join(dir, "src", file)), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src", file), content)
+    }
+    await build({ ...resolveConfig(config, dir), out: path.join(dir, "dist") })
+    return logs
+  } finally {
+    console.log = log
+    fs.rmSync(dir, { recursive: true, force: true })
+  }
+}
+
+describe("links", () => {
+  it("passes links to pages and files the build has, however they're written", async () => {
+    await buildFiles({
+      "pages/index.html": [
+        "<a href=\"/about/\">a</a> <a href=\"/about\">b</a> <a href=\"about/\">c</a> <a href='/about/?tab=1#top'>d</a>",
+        "<a href=\"#top\">e</a> <img src=\"/images/a%20b.png\"> <a href=\"https://example.com/nope\">f</a>",
+        "<a href=\"//cdn.example.com/x.js\">g</a> <a href=\"mailto:me@example.com\">h</a>"
+      ].join("\n"),
+      "pages/about.html": "<a href=\"../\">home</a>",
+      "images/a b.png": ""
+    })
+  })
+
+  it("fails the build on a link to nothing, naming the page", async () => {
+    await assert.rejects(buildFiles({
+      "pages/index.html": "<a href=\"/gone/\">x</a> <img src=\"/missing.png\">",
+      "pages/blog/post.html": "<a href=\"../../gone/\">x</a>"
+    }), (/** @type {Error} */ error) => {
+      assert.match(error.message, /^2 links to nothing in the build:/)
+      assert.match(error.message, /\/gone\/ on pages\/index\.html and 1 more/)
+      assert.match(error.message, /\/missing\.png on pages\/index\.html/)
+      return true
+    })
+  })
+
+  it("leaves out links in scripts, comments and text", async () => {
+    await buildFiles({
+      "pages/index.html": [
+        "<script>el.innerHTML = '<a href=\"/gone/\">x</a>'</script>",
+        "<!-- <a href=\"/gone/\"> -->",
+        "<code>&lt;a href=\"/gone/\"&gt;</code>"
+      ].join("\n")
+    })
+  })
+
+  it("counts files the after hooks write", async () => {
+    await buildFiles({ "pages/index.html": "<img src=\"/og/index.png\">" }, {
+      after: [({ site }) => {
+        fs.mkdirSync(path.join(site.out, "og"), { recursive: true })
+        fs.writeFileSync(path.join(site.out, "og/index.png"), "")
+      }]
+    })
+  })
+
+  it("warns about partials no page uses", async () => {
+    const logs = await buildFiles({
+      "pages/index.html": "<x-html src=\"partials/nav.html\"/>",
+      "partials/nav.html": "<x-html src=\"partials/inner/link.html\"/>",
+      "partials/inner/link.html": "<a href=\"/\">home</a>",
+      "partials/old.html": "<p>old</p>"
+    })
+    assert.equal(logs.filter(l => l.includes("not used by any page")).length, 1)
+    assert.ok(logs.some(l => l.includes("1 partial not used by any page: partials/old.html")))
+  })
+})
+
 describe("plural", () => {
   it("counts one, none and many", () => {
     assert.equal(plural(1, "page"), "1 page")

@@ -100,6 +100,8 @@ mothwing's tags add more when you need them: partials, hashed asset links, data 
 
 `{{ site.name }}` comes from `src/data/site.json`, see [Data](https://mothwing.dev/examples/data/), and the tags are in [Tags](https://mothwing.dev/examples/tags/). In dev, a URL with no page gets your `404.html`.
 
+`build` checks what it made before it's done. An `href` or `src` written as a path, like `/about/` or `../images/logo.png`, that leads to nothing in the build fails it, with the page it's on. Full URLs are left alone, as anything can serve them. A partial no page uses gets a warning, so leftovers don't pile up.
+
 ## Config
 No config is needed to start. `domain` unlocks SEO tags, sitemaps and CNAME. Every option, with its default and what it does, is in the [API reference](https://mothwing.dev/api/Config/).
 

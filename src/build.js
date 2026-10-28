@@ -5,6 +5,7 @@ import { withCsp } from "./csp.js"
 import { loadData } from "./data.js"
 import { dependencies } from "./deps.js"
 import { Html } from "./html.js"
+import { checkLinks, warnUnusedPartials } from "./links.js"
 import { log, plural } from "./log.js"
 import { minifyHtml } from "./minify.js"
 import { buildState, renderPage } from "./render.js"
@@ -51,8 +52,8 @@ function findAssets(value, found, seen = new Set()) {
  * @param {import("./render.js").BuildState} state
  * @param {{ hashed?: boolean, only?: Set<string> }} [options] `hashed` for production: hashed asset links and minified
  *   HTML. `only` renders just these pages, relative to the pages folder
- * @returns {Promise<{ routes: import("./routes.js").Route[], written: number }>} The pages rendered, and how many of
- *   them and their files were written
+ * @returns {Promise<{ routes: import("./routes.js").Route[], pages: string[], written: number }>} The pages rendered,
+ *   their HTML, and how many of them and their files were written
  */
 export async function buildHTML(site, state, { hashed = true, only } = {}) {
   log("HTML", only ? `Rendering ${[...only].join(", ")}...` : "Rendering pages...")
@@ -107,7 +108,7 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
     const [first] = state.seoWarnings
     log("WARN", `<x-seo> used on ${plural(count, "page")} without a domain, skipping canonical URLs and link previews (first: ${first})`)
   }
-  return { routes, written: written + files }
+  return { routes, pages, written: written + files }
 }
 
 /**
@@ -146,7 +147,9 @@ export async function build(site) {
   // Together, esbuild works in its own process while Sass compiles in this one
   await Promise.all([buildJS(site, state), buildSass(site)])
   // After JS and CSS, since the ?v=hash is made from the built files
-  const { routes } = await buildHTML(site, state)
+  const { routes, pages } = await buildHTML(site, state)
+  warnUnusedPartials(site, state)
   await writeSiteFiles(site, routes)
   await runAfter(site, routes, false)
+  checkLinks(site, routes, pages)
 }
