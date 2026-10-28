@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { build, clean, dev, loadConfig, renderSite } from "../src/index.js"
+import { build, clean, dev, loadConfig, log, renderSite } from "../src/index.js"
 
 const USAGE = `Usage: mothwing <command> [--root <dir>]
 
@@ -40,6 +40,6 @@ if (!command) {
 try {
   await command(await loadConfig(flag("root")))
 } catch (err) {
-  console.error(`mothwing: ${/** @type {Error} */ (err).message}`)
+  log("ERROR", /** @type {Error} */ (err).message)
   process.exit(1)
 }

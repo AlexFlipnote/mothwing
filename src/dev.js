@@ -40,8 +40,8 @@ const jsWatchPlugin = (changed) => ({
     let last = ""
     build.onStart(() => log("JS", "Building JS..."))
     build.onEnd(result => {
-      log("JS", result.errors.length ? "Error" : "Done building")
-      if (result.errors.length) return
+      if (result.errors.length) return log("ERROR", "The JS didn't build, esbuild says why above")
+      log("JS", "Done building")
       // The server builds again on every request for the JS, which mustn't reload the page that asked
       const files = Object.keys(result.metafile?.inputs ?? {})
       const stamp = files.map(file => `${file}:${fs.existsSync(file) ? fs.statSync(file).mtimeMs : 0}`).join("\n")
@@ -72,7 +72,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     await portFree(port, host)
   } catch (err) {
     await Promise.all(contexts.map(ctx => ctx.dispose()))
-    log("SERVE", `Port ${port} is taken, is the dev server already running? (${/** @type {Error} */ (err).message})`)
+    log("ERROR", `Port ${port} is taken, is the dev server already running? (${/** @type {Error} */ (err).message})`)
     process.exit(1)
   }
 
@@ -144,7 +144,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     const stat = fs.statSync(file, { throwIfNoEntry: false })
     if (!stat) {
       clearTimeout(restart)
-      restart = setTimeout(() => rebuildAll().catch(err => log("WATCH", err.message)), 200)
+      restart = setTimeout(() => rebuildAll().catch(err => log("ERROR", err.message)), 200)
       return
     }
     if (stat.isDirectory()) return
@@ -154,7 +154,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     const rerender = site.rerender.some(dir => relative === dir || relative.startsWith(`${dir}/`))
     if (/\.(scss|sass)$/.test(file))
       // Sass the pages are made from too, like a CSS framework's docs, renders them once the CSS is built
-      buildSass(site).then(() => rerender ? render("all") : reload()).catch(err => log("CSS", err.message))
+      buildSass(site).then(() => rerender ? render("all") : reload()).catch(err => log("ERROR", err.message))
     else if (page && page.endsWith(".html"))
       render([page])
     else if (using.length)
@@ -162,7 +162,7 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
     else if (rerender)
       render("all")
     else if (!isExcluded(site, file))
-      copyAssets(site, file).then(reload).catch(err => log("ASSET", err.message))
+      copyAssets(site, file).then(reload).catch(err => log("ERROR", err.message))
   }
 
   fs.watch(site.src, { recursive: true }, (_, filename) => filename && changed(path.join(site.src, filename)))

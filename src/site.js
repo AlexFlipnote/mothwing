@@ -2,7 +2,7 @@ import { execFileSync } from "child_process"
 import fs from "fs"
 import path from "path"
 import { commonFolder } from "./assets.js"
-import { log, posix } from "./log.js"
+import { log, plural, posix } from "./log.js"
 
 /**
  * Reads the history of the files the pages are made from, from one git log of the folder they're all in, rather than
@@ -124,5 +124,5 @@ export async function writeSiteFiles(site, routes, dated = true) {
     ].join("\n"))
   }
 
-  log("SITE", site.sitemap ? `Done, ${[...sitemaps.values()].flat().length} pages in the sitemap` : "Done")
+  log("SITE", site.sitemap ? `Done, ${plural([...sitemaps.values()].flat().length, "page")} in the sitemap` : "Done")
 }

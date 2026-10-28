@@ -5,7 +5,7 @@ import { withCsp } from "./csp.js"
 import { loadData } from "./data.js"
 import { dependencies } from "./deps.js"
 import { Html } from "./html.js"
-import { log } from "./log.js"
+import { log, plural } from "./log.js"
 import { minifyHtml } from "./minify.js"
 import { buildState, renderPage } from "./render.js"
 import { listRoutes } from "./routes.js"
@@ -101,11 +101,11 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
       }
     }
   }
-  log("HTML", `Done rendering ${routes.length} pages${written < routes.length ? `, ${written} changed` : ""}`)
+  log("HTML", `Done rendering ${plural(routes.length, "page")}${written < routes.length ? `, ${written} changed` : ""}`)
   if (hashed && state.seoWarnings.size) {
     const count = state.seoWarnings.size
     const [first] = state.seoWarnings
-    log("WARN", `<x-seo> used on ${count} page${count > 1 ? "s" : ""} without a domain, skipping canonical URLs and link previews (first: ${first})`)
+    log("WARN", `<x-seo> used on ${plural(count, "page")} without a domain, skipping canonical URLs and link previews (first: ${first})`)
   }
   return { routes, written: written + files }
 }

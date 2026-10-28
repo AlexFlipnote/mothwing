@@ -12,6 +12,7 @@ import { pagesUsing } from "../src/deps.js"
 import { minifyHtml } from "../src/minify.js"
 import { listRoutes } from "../src/routes.js"
 import { serve } from "../src/serve.js"
+import { plural } from "../src/log.js"
 import { writeSiteFiles } from "../src/site.js"
 import { build, loadConfig, renderSite, resolveConfig } from "../src/index.js"
 
@@ -502,4 +503,12 @@ describe("examples", () => {
       for (const page of pages) assert.doesNotMatch(fs.readFileSync(path.join(out, name, page), "utf8"), /\{\{|<\/?x-/, page)
     })
   }
+})
+
+describe("plural", () => {
+  it("counts one, none and many", () => {
+    assert.equal(plural(1, "page"), "1 page")
+    assert.equal(plural(0, "page"), "0 pages")
+    assert.equal(plural(2, "page"), "2 pages")
+  })
 })
