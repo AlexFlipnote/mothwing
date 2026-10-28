@@ -32,6 +32,118 @@ async function quietBuild(site) {
   }
 }
 
+describe("no config", () => {
+  it("resolveConfig with no config sets domain and url to null", () => {
+    const site = resolveConfig(null, ROOT)
+    assert.equal(site.domain, null)
+    assert.equal(site.url, null)
+  })
+
+  it("builds a plain HTML page with no config file", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-noconfig-"))
+    try {
+      fs.mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages/index.html"), "<!doctype html><html><body><h1>Hello</h1></body></html>")
+      const site = { ...resolveConfig(null, dir), out: path.join(dir, "dist") }
+      await quietBuild(site)
+      assert.ok(fs.existsSync(path.join(dir, "dist/index.html")))
+      assert.ok(fs.readFileSync(path.join(dir, "dist/index.html"), "utf8").includes("<h1>Hello</h1>"))
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("warns once at the end of a production build when x-seo is used without a domain", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-noseo-"))
+    try {
+      fs.mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages/index.html"), "<!doctype html><html><head><x-seo title=\"Hi\" description=\"Test\"/></head><body></body></html>")
+      const site = { ...resolveConfig(null, dir), out: path.join(dir, "dist") }
+      /** @type {string[]} */
+      const logs = []
+      const log = console.log
+      console.log = (msg) => logs.push(msg)
+      try {
+        await build(site)
+      } finally {
+        console.log = log
+      }
+      assert.equal(logs.filter(l => l.includes("without a domain")).length, 1)
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("does not warn during dev renders", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-noseo-dev-"))
+    try {
+      fs.mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages/index.html"), "<!doctype html><html><head><x-seo title=\"Hi\" description=\"Test\"/></head><body></body></html>")
+      const site = { ...resolveConfig(null, dir), out: path.join(dir, "dist") }
+      fs.mkdirSync(site.out, { recursive: true })
+      /** @type {string[]} */
+      const logs = []
+      const log = console.log
+      console.log = (msg) => logs.push(msg)
+      try {
+        await renderSite(site)
+      } finally {
+        console.log = log
+      }
+      assert.ok(!logs.some(l => l.includes("without a domain")))
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("throws on sitemap or cname without a domain", () => {
+    assert.throws(() => resolveConfig({ sitemap: true }, ROOT), /sitemap needs a domain/)
+    assert.throws(() => resolveConfig({ cname: true }, ROOT), /cname needs a domain/)
+  })
+
+  it("builds fine with other options set but no domain", () => {
+    assert.doesNotThrow(() => resolveConfig({ minify: true, activeLinks: true }, ROOT))
+  })
+
+  it("loads a config file that has no domain", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-nodomain-"))
+    try {
+      fs.writeFileSync(path.join(dir, "mothwing.config.js"), "export default { minify: true }")
+      const site = await loadConfig(dir)
+      assert.equal(site.domain, null)
+      assert.equal(site.url, null)
+      assert.equal(site.minify, true)
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("writes robots.txt without a Sitemap line when there is no domain", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-robots-"))
+    try {
+      fs.mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages/index.html"), "<!doctype html><html><body></body></html>")
+      const site = { ...resolveConfig({ robots: true }, dir), out: path.join(dir, "dist") }
+      await quietBuild(site)
+      const robots = fs.readFileSync(path.join(dir, "dist/robots.txt"), "utf8")
+      assert.ok(robots.includes("User-agent: *"))
+      assert.ok(!robots.includes("Sitemap:"))
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
+  it("fails the build when the config file has a syntax error", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-broken-"))
+    try {
+      fs.writeFileSync(path.join(dir, "mothwing.config.js"), "this is not valid javascript }{")
+      await assert.rejects(loadConfig(dir))
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+})
+
 describe("build with nothing turned on", () => {
   const out = path.join(ROOT, "dist-bare")
 
