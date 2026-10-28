@@ -27,6 +27,7 @@ import { includeHtml, onlyAttrs, parseAttrs, parseTemplate, renderNodes } from "
  * @property {Map<string, Set<string>>} used A page's file -> the names its pages filled in, for what they depend on
  * @property {Map<string, string[]>} chunkImports "/js/gathering.js" -> the chunks it imports up front
  * @property {Map<string, string>} entryChunks "/js/data/x.json" -> "/js/chunks/x-hash.js"
+ * @property {Set<string>} seoWarnings Pages that used <x-seo> without a domain set
  */
 
 /** @returns {BuildState} */
@@ -36,7 +37,8 @@ export const buildState = () => ({
   templates: new Map(),
   used: new Map(),
   chunkImports: new Map(),
-  entryChunks: new Map()
+  entryChunks: new Map(),
+  seoWarnings: new Set()
 })
 
 /**
@@ -83,6 +85,7 @@ function coreTags(site, state, from, hashed) {
   return {
     "x-seo": ({ attrs, route }) => {
       onlyAttrs(from, "x-seo", attrs, ["title", "description", "image", "image-alt", "image-size", "section", "name"])
+      if (!site.url) state.seoWarnings.add(route.source)
       return seoTags(site, route, attrs)
     },
     "x-js": ({ attrs }) => {

@@ -1,15 +1,17 @@
 import fs from "fs"
 import path from "path"
 import { pathToFileURL } from "url"
+import { log } from "./log.js"
 
 export const CONFIG_FILE = "mothwing.config.js"
 
 /**
- * What a site's mothwing.config.js default exports. Only `domain` is needed. Paths are relative to `src` unless they
- * say otherwise. The extras (minify to activeLinks) are off until asked for: `true` turns one on as it comes, an object
+ * What a site's mothwing.config.js default exports. Paths are relative to `src` unless they say otherwise.
+ * The extras (minify to activeLinks) are off until asked for: `true` turns one on as it comes, an object
  * with its own settings.
  * @typedef {object} Config
- * @property {string} domain "example.com", for the canonical URLs, sitemaps and CNAME
+ * @property {string} [domain] "example.com", for the canonical URLs, sitemaps and CNAME. Optional: without it,
+ *   the site builds fine, but <x-seo> leaves out canonical URLs and link previews
  * @property {string} [src] The source folder, relative to the config. "src"
  * @property {string} [out] The build folder, relative to the config. "dist"
  * @property {string} [pages] The pages folder. "pages"
@@ -100,7 +102,8 @@ export const CONFIG_FILE = "mothwing.config.js"
 /**
  * The options resolveConfig changes, the rest of Site is Config as it was with its defaults.
  * @typedef {object} Resolved
- * @property {string} url "https://example.com"
+ * @property {string | null} domain "example.com", or null if not set
+ * @property {string | null} url "https://example.com", or null if no domain was set
  * @property {string} root The config's folder
  * @property {string} src The source folder, absolute
  * @property {string} out The build folder, absolute
@@ -150,17 +153,19 @@ const settings = (value) => typeof value === "object" ? value : {}
 export const defineConfig = (config) => config
 
 /**
- * Checks a config and fills in its defaults. An unknown option, or one without a domain, throws.
- * @param {Config} config
+ * Checks a config and fills in its defaults. An unknown option throws.
+ * @param {Config | null | undefined} config
  * @param {string} root The config's folder
  * @returns {Site}
  */
 export function resolveConfig(config, root) {
-  if (!config?.domain) throw new Error(`${CONFIG_FILE}: needs a domain`)
+  config = config ?? {}
   const unknown = Object.keys(config).filter(key => !OPTIONS.includes(key))
   if (unknown.length) throw new Error(`${CONFIG_FILE}: unknown option ${unknown.map(key => `"${key}"`).join(", ")}, the options are ${OPTIONS.join(", ")}`)
   // It took html-minifier-terser's options until 0.1.0, which would be on without them otherwise
   if (typeof config.minify === "object") throw new Error(`${CONFIG_FILE}: minify is true or false, mothwing minifies the HTML itself`)
+  if (!config.domain && config.sitemap) throw new Error(`${CONFIG_FILE}: sitemap needs a domain to build absolute URLs. Set domain in ${CONFIG_FILE} or turn sitemap off.`)
+  if (!config.domain && config.cname) throw new Error(`${CONFIG_FILE}: cname needs a domain to write the CNAME file. Set domain in ${CONFIG_FILE} or turn cname off.`)
 
   const src = path.resolve(root, config.src ?? "src")
   const pages = config.pages ?? "pages"
@@ -169,8 +174,8 @@ export function resolveConfig(config, root) {
   const modules = config.js?.modules ?? []
 
   return {
-    domain: config.domain,
-    url: `https://${config.domain}`,
+    domain: config.domain ?? null,
+    url: config.domain ? `https://${config.domain}` : null,
     root,
     src,
     out: path.resolve(root, config.out ?? "dist"),
@@ -188,12 +193,11 @@ export function resolveConfig(config, root) {
     // As dev compares them to what changed: "./js/data/" -> "js/data"
     rerender: (config.rerender ?? []).map(dir => path.posix.normalize(dir.replaceAll("\\", "/")).replace(/\/$/, "")),
     seo: {
-      siteName: config.domain,
-      locale: "en_US",
-      image: null,
-      maxTitle: 60,
-      maxDescription: 160,
-      ...config.seo
+      siteName: config.seo?.siteName ?? config.domain ?? "",
+      locale: config.seo?.locale ?? "en_US",
+      image: config.seo?.image ?? null,
+      maxTitle: config.seo?.maxTitle ?? 60,
+      maxDescription: config.seo?.maxDescription ?? 160
     },
     minify: config.minify ?? false,
     csp: config.csp ? { ...DEFAULT_CSP, ...settings(config.csp) } : false,
@@ -215,6 +219,9 @@ export function resolveConfig(config, root) {
  */
 export async function loadConfig(root = process.cwd()) {
   const file = path.join(root, CONFIG_FILE)
-  if (!fs.existsSync(file)) throw new Error(`No ${CONFIG_FILE} in ${root}`)
+  if (!fs.existsSync(file)) {
+    log("CONF", `No ${CONFIG_FILE} found, building with defaults`)
+    return resolveConfig(null, path.resolve(root))
+  }
   return resolveConfig((await import(pathToFileURL(file).href)).default, path.resolve(root))
 }

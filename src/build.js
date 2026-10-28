@@ -102,6 +102,11 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
     }
   }
   log("HTML", `Done rendering ${routes.length} pages${written < routes.length ? `, ${written} changed` : ""}`)
+  if (hashed && state.seoWarnings.size) {
+    const count = state.seoWarnings.size
+    const [first] = state.seoWarnings
+    log("WARN", `<x-seo> used on ${count} page${count > 1 ? "s" : ""} without a domain, skipping canonical URLs and link previews (first: ${first})`)
+  }
   return { routes, written: written + files }
 }
 
