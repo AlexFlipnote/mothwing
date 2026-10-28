@@ -1,23 +1,32 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'"><meta name="viewport" content="width=device-width, initial-scale=1"><link rel="icon" type="image/png" href="/images/logo.png"><link href="/css/docs.css?v=bbb6a322" type="text/css" rel="stylesheet"><title>mothwing</title><meta name="description" content="Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing"><link rel="canonical" href="https://mothwing.dev/"><meta name="robots" content="max-image-preview:large"><meta property="og:locale" content="en_US"><meta property="og:type" content="website"><meta property="og:site_name" content="mothwing"><meta property="og:title" content="mothwing"><meta property="og:description" content="Write HTML, ship HTML. A small static site builder for pages as light as a moth's wing"><meta property="og:url" content="https://mothwing.dev/"><meta property="og:image" content="https://mothwing.dev/images/logo.png"><meta property="og:image:width" content="512"><meta property="og:image:height" content="512"><meta property="og:image:alt" content="The mothwing logo, a moth written as &lt;|&gt;"><meta name="twitter:card" content="summary"><script type="application/ld+json">{"@context":"https://schema.org","@type":"WebSite","name":"mothwing","url":"https://mothwing.dev/"}</script></head><body><nav><a class="brand" href="/" aria-current="page">mothwing</a> <a href="/examples/">Examples</a> <a href="/api/">API</a> <a href="https://github.com/AlexFlipnote/mothwing">GitHub</a></nav><main><header class="hero"><img src="/images/logo.png" alt="" width="96" height="96"><div><h1>mothwing</h1></div></header><div class="intro"><p><strong>Write HTML, ship HTML.</strong> A small static site builder for pages as light as a moth&#39;s wing, with hashed asset links and modulepreloads for code split JS. The rest is there when you ask for it: SEO tags, a Content-Security-Policy that allows only your own inline scripts, sitemaps dated from git, robots.txt and minified HTML.</p><p>It was born as the build script of <a href="https://ffxiv.watch">ffxiv.watch</a>, and got tweaked over time until I was a little too proud of it to keep it there. So it branched out into its own thing, for any site that wants the same.</p><h2>What it isn&#39;t</h2><p>mothwing isn&#39;t a framework. There are no components, and nothing runs in the browser that you didn&#39;t write. If you want those, Astro and SvelteKit are great.</p><p>I did try them, and others, before making my own. They&#39;re good at what they do, but I wanted full control of the output: every byte of HTML exactly as I wrote it, and as few dependencies as possible between my files and the finished pages. mothwing is for when you want the same.</p></div><div class="intro"><h2>Getting started</h2><pre><code class="language-sh">npm install --save-dev mothwing
 npx mothwing dev     # dev server on http://localhost:8080
 npx mothwing build   # production build into dist/
-</code></pre><p>A site is a <code>mothwing.config.js</code> and a <code>src/</code> folder. The build mirrors <code>src/</code>, so <code>src/images/logo.png</code> is <code>/images/logo.png</code>:</p><pre><code>mothwing.config.js
+</code></pre><p>The smallest site is one file:</p><pre><code>src/pages/index.html
+</code></pre><p>The build mirrors <code>src/</code>, so <code>src/images/logo.png</code> becomes <code>/images/logo.png</code>. Add a config when you need SEO tags, sitemaps or anything else:</p><pre><code class="language-js">// mothwing.config.js
+export default { domain: &quot;example.com&quot; }
+</code></pre><p>The rest of the folders are there when you want them:</p><pre><code>mothwing.config.js
 src/
   pages/           every page, the folders are the URLs: about.html -&gt; /about/
   partials/        bits of HTML the pages share
   data/            JSON and JS the pages are filled from
   js/              bundled by esbuild
   ...              everything else is copied as it is
-</code></pre><p>The folder names are only defaults, <code>pages</code>, <code>partials</code> and <code>data</code> can each be renamed in the config.</p><pre><code class="language-js">import { defineConfig } from &quot;mothwing&quot;
+</code></pre><p>The folder names are only defaults. <code>pages</code>, <code>partials</code> and <code>data</code> can each be renamed in the config. <code>defineConfig</code> gives your editor types so every option autocompletes and a typo is underlined:</p><pre><code class="language-js">import { defineConfig } from &quot;mothwing&quot;
 
 export default defineConfig({
   domain: &quot;example.com&quot;,
   js: { scripts: [&quot;js/index.js&quot;] },
   exclude: [&quot;js&quot;]
 })
-</code></pre><p><code>defineConfig</code> does nothing but give your editor the config&#39;s types, so every option autocompletes and a typo is underlined. Without the import, a JSDoc comment does the same:</p><pre><code class="language-js">/** @type {import(&quot;mothwing&quot;).Config} */
+</code></pre><p>Without the import, a JSDoc comment does the same:</p><pre><code class="language-js">/** @type {import(&quot;mothwing&quot;).Config} */
 export default { ... }
-</code></pre><p>An option mothwing doesn&#39;t know fails the build either way.</p><p>A page is HTML with a few tags of mothwing&#39;s in it, which turn into plain HTML as it builds:</p><pre><code class="language-html">&lt;!-- src/pages/index.html --&gt;
+</code></pre><p>An option mothwing doesn&#39;t know fails the build either way.</p><p>A page is plain HTML. mothwing builds it as-is:</p><pre><code class="language-html">&lt;!-- src/pages/index.html --&gt;
+&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+  &lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;title&gt;Home&lt;/title&gt;&lt;/head&gt;
+  &lt;body&gt;&lt;h1&gt;Hello&lt;/h1&gt;&lt;/body&gt;
+&lt;/html&gt;
+</code></pre><p>mothwing&#39;s tags add more when you need them: partials, hashed asset links, data placeholders, and with a domain set, SEO tags:</p><pre><code class="language-html">&lt;!-- src/pages/index.html --&gt;
 &lt;!doctype html&gt;
 &lt;html lang=&quot;en&quot;&gt;
   &lt;head&gt;
