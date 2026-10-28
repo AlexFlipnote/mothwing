@@ -22,7 +22,20 @@ npx mothwing dev     # dev server on http://localhost:8080
 npx mothwing build   # production build into dist/
 ```
 
-A site is a `mothwing.config.js` and a `src/` folder. The build mirrors `src/`, so `src/images/logo.png` is `/images/logo.png`:
+The smallest site is one file:
+
+```
+src/pages/index.html
+```
+
+The build mirrors `src/`, so `src/images/logo.png` becomes `/images/logo.png`. Add a config when you need SEO tags, sitemaps or anything else:
+
+```js
+// mothwing.config.js
+export default { domain: "example.com" }
+```
+
+The rest of the folders are there when you want them:
 
 ```
 mothwing.config.js
@@ -34,7 +47,7 @@ src/
   ...              everything else is copied as it is
 ```
 
-The folder names are only defaults, `pages`, `partials` and `data` can each be renamed in the config.
+The folder names are only defaults. `pages`, `partials` and `data` can each be renamed in the config. `defineConfig` gives your editor types so every option autocompletes and a typo is underlined:
 
 ```js
 import { defineConfig } from "mothwing"
@@ -46,7 +59,7 @@ export default defineConfig({
 })
 ```
 
-`defineConfig` does nothing but give your editor the config's types, so every option autocompletes and a typo is underlined. Without the import, a JSDoc comment does the same:
+Without the import, a JSDoc comment does the same:
 
 ```js
 /** @type {import("mothwing").Config} */
@@ -55,7 +68,18 @@ export default { ... }
 
 An option mothwing doesn't know fails the build either way.
 
-A page is HTML with a few tags of mothwing's in it, which turn into plain HTML as it builds:
+A page is plain HTML. mothwing builds it as-is:
+
+```html
+<!-- src/pages/index.html -->
+<!doctype html>
+<html lang="en">
+  <head><meta charset="utf-8"><title>Home</title></head>
+  <body><h1>Hello</h1></body>
+</html>
+```
+
+mothwing's tags add more when you need them: partials, hashed asset links, data placeholders, and with a domain set, SEO tags:
 
 ```html
 <!-- src/pages/index.html -->
@@ -77,7 +101,7 @@ A page is HTML with a few tags of mothwing's in it, which turn into plain HTML a
 `{{ site.name }}` comes from `src/data/site.json`, see [Data](https://mothwing.dev/examples/data/), and the tags are in [Tags](https://mothwing.dev/examples/tags/). In dev, a URL with no page gets your `404.html`.
 
 ## Config
-Only `domain` is needed. Every option, with its default and what it does, is in the [API reference](https://mothwing.dev/api/Config/).
+No config is needed to start. `domain` unlocks SEO tags, sitemaps and CNAME. Every option, with its default and what it does, is in the [API reference](https://mothwing.dev/api/Config/).
 
 ## Examples
 The rest of what mothwing does, part by part. They're in [examples/](examples), and on [mothwing.dev](https://mothwing.dev/examples/):
