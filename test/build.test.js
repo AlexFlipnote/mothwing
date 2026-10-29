@@ -1,11 +1,12 @@
 import assert from "node:assert/strict"
+import { execFileSync } from "node:child_process"
 import crypto from "node:crypto"
 import fs from "node:fs"
 import http from "node:http"
 import os from "node:os"
 import path from "node:path"
 import { after, before, describe, it } from "node:test"
-import { fileURLToPath } from "node:url"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import esbuild from "esbuild"
 import { loadData } from "../src/data.js"
 import { pagesUsing } from "../src/deps.js"
@@ -327,6 +328,40 @@ describe("site files", () => {
 
     assert.deepEqual(await write({ domain: "example.com", sitemap: { sections: ["posts"] } }), ["sitemap-pages.xml", "sitemap-posts.xml", "sitemap.xml"])
     assert.ok(fs.readFileSync(path.join(ROOT, "dist-dev", "sitemaps", "sitemap.xml"), "utf8").includes("<sitemapindex"))
+  })
+
+  it("warns that a shallow clone dates pages wrong", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-shallow-"))
+    try {
+      const repo = path.join(dir, "repo")
+      const clone = path.join(dir, "clone")
+      /** @param {string[]} args */
+      const git = (args) => execFileSync("git", ["-c", "user.name=moth", "-c", "user.email=moth@example.com", ...args], { cwd: dir, stdio: "ignore" })
+      fs.mkdirSync(path.join(repo, "src", "pages"), { recursive: true })
+      git(["init", "-q", repo])
+      for (const text of ["one", "two"]) {
+        fs.writeFileSync(path.join(repo, "src", "pages", "index.html"), text)
+        git(["-C", repo, "add", "."])
+        git(["-C", repo, "commit", "-q", "-m", text])
+      }
+      // A file:// URL, as git ignores --depth for a plain path
+      git(["clone", "-q", "--depth", "1", pathToFileURL(repo).href, clone])
+
+      const site = { ...resolveConfig({ domain: "example.com", sitemap: true }, clone), out: path.join(dir, "dist") }
+      fs.mkdirSync(site.out)
+      /** @type {string[]} */
+      const lines = []
+      const log = console.log
+      console.log = (line) => lines.push(line)
+      try {
+        await writeSiteFiles(site, [{ source: "pages/index.html", output: "index.html", url: "/", props: {}, sources: ["pages/index.html"] }])
+      } finally {
+        console.log = log
+      }
+      assert.match(lines.join("\n"), /git clone is shallow/)
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
   })
 })
 

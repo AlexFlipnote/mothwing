@@ -25,6 +25,10 @@ function commitDates(site, files) {
     const prefix = git(["rev-parse", "--show-prefix"]).trim()
     /** @param {string} file */
     const repoPath = (file) => path.posix.normalize(prefix + posix(path.relative(site.root, path.join(site.src, file))))
+    // CI checkouts are often shallow, and git log can't see past them, so every older page gets the oldest commit's date
+    if (git(["rev-parse", "--is-shallow-repository"]).trim() === "true") {
+      log("WARN", "The git clone is shallow, so the sitemap dates older pages wrong. On GitHub Actions, give actions/checkout fetch-depth: 0")
+    }
 
     /** @type {Map<string, { commit: number, date: string }>} Each file's last commit, by how many commits ago */
     const last = new Map()
