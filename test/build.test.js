@@ -464,6 +464,11 @@ describe("dev server", () => {
     assert.deepEqual([image.status, await image.text()], [404, "404 - Not Found"], "only pages get the 404 page")
   })
 
+  it("keeps running after a URL it can't decode", async () => {
+    await (await open("/%/")).text()
+    assert.equal((await open("/")).status, 200)
+  })
+
   it("sends the pages open a reload", async () => {
     const req = http.request(`${url}/__mothwing/reload`, {
       headers: { connection: "Upgrade", upgrade: "websocket", "sec-websocket-version": "13", "sec-websocket-key": "dGhlIHNhbXBsZSBub25jZQ==" }

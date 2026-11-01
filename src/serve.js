@@ -64,7 +64,14 @@ export async function serve(site, context, { host, port }) {
       return
     }
     // esbuild lists the files of a folder without a page, where the site would have none
-    const folder = decodeURIComponent(new URL(req.url ?? "/", "http://localhost").pathname)
+    const { pathname } = new URL(req.url ?? "/", "http://localhost")
+    let folder
+    try {
+      folder = decodeURIComponent(pathname)
+    } catch {
+      // A malformed one like /% would otherwise throw, and take the dev server down with it
+      folder = pathname
+    }
     if (folder.endsWith("/") && !fs.existsSync(path.join(site.out, folder, "index.html"))) return sendNotFound(req, res)
 
     // esbuild answers only its own host, a phone on the LAN asking for 192.168.x.x:8080 would get a HTTP 403

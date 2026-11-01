@@ -7,6 +7,7 @@ import path from "path"
 import { fileURLToPath } from "url"
 import { buildSass, clean, copyAssets, isExcluded, jsBuilds } from "./assets.js"
 import { renderSite } from "./build.js"
+import { CONFIG_FILE } from "./config.js"
 import { pagesUsing } from "./deps.js"
 import { log, posix } from "./log.js"
 import { serve } from "./serve.js"
@@ -166,6 +167,15 @@ export async function dev(site, { host = "localhost", port = 8080 } = {}) {
   }
 
   fs.watch(site.src, { recursive: true }, (_, filename) => filename && changed(path.join(site.src, filename)))
+
+  // The renders load the config again, but the JS, Sass and what's watched were set up from the first one
+  /** @type {NodeJS.Timeout | undefined} */
+  let configChanged
+  fs.watch(site.root, (_, filename) => {
+    if (filename !== CONFIG_FILE) return
+    clearTimeout(configChanged)
+    configChanged = setTimeout(() => log("WARN", `${CONFIG_FILE} changed, restart dev to use all of it`), 100)
+  })
   // What's in src is watched already, rerender can also name files and folders outside it
   for (const dir of site.rerender.filter(dir => dir.startsWith("../"))) {
     const watched = path.join(site.src, dir)
