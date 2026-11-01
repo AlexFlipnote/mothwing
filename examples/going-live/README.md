@@ -20,7 +20,7 @@ export default defineConfig({
 | `sitemap` | `sitemap.xml` with every page, each dated by the last commit to the files it's made from. `sections` gives a section a sitemap of its own, `sitemap-notes.xml`, behind a sitemap index, so Search Console shows how each is indexed |
 | `robots` | `robots.txt`, allowing every crawler and pointing at the sitemap. `block` turns crawlers away by name, `disallow` keeps paths out of all of them |
 | `cname` | A `CNAME` file with the domain, which a GitHub Pages deploy needs every time |
-| `csp` | A Content-Security-Policy `<meta>` on every page, allowing only the site's own files, and its inline scripts by their hash. An object sets directives over the defaults: `{ "style-src": "'self' 'unsafe-inline'" }` |
+| `csp` | A Content-Security-Policy `<meta>` on every page, allowing only the site's own files, and its inline scripts and styles by their hash. Pages need a `<meta charset>` for it to go after. An object sets directives over the defaults: `{ "style-src": "'self' 'unsafe-inline'" }`, which also allows `style="..."` attributes, as no hashes are added next to `'unsafe-inline'` |
 | `minify` | Production pages without comments and the whitespace that doesn't show, the inline scripts and styles minified |
 | `activeLinks` | `aria-current="page"` on links to the page they're on, `"true"` on links to its section, for the nav to style |
 

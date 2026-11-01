@@ -168,5 +168,8 @@ export function renderPage(site, state, route, hashed) {
     const output = [tags[name]({ attrs: parseAttrs(attrs), route, site })].flat()
     return lineStart ? output.map(line => space + line).join("\n") : space + output.join("\n")
   })
+  // A tag none of the above could read, like src='...', would be written as it is
+  const unread = html.match(/<\/?x-[a-z][^>]*>?/)
+  if (unread) throw new Error(`${from}: can't read ${unread[0]}, its attributes take double quotes: name="value"`)
   return site.activeLinks ? markActiveLinks(site.activeLinks, route, html) : html
 }

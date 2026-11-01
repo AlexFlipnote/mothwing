@@ -30,8 +30,9 @@ export const CONFIG_FILE = "mothwing.config.js"
  * @property {SeoConfig} [seo] For <x-seo>
  * @property {boolean} [minify] Minify the HTML of production builds: comments and the whitespace that doesn't show are
  *   taken out, and esbuild minifies the inline scripts and styles. The tags and their attributes stay as written
- * @property {boolean | Record<string, string>} [csp] A Content-Security-Policy <meta> that allows only the site's own
- *   files, and its inline scripts by their hash. An object sets directives over the defaults:
+ * @property {boolean | Record<string, string>} [csp] A Content-Security-Policy <meta>, after each page's <meta charset>,
+ *   that allows only the site's own files, and its inline scripts and styles by their hash. An object sets directives
+ *   over the defaults, and one with 'unsafe-inline' gets no hashes, as they'd turn it off:
  *   { "style-src": "'self' 'unsafe-inline'" }
  * @property {boolean | SitemapConfig} [sitemap] sitemap.xml with every page, each dated by the last git commit to its files
  * @property {boolean | RobotsConfig} [robots] robots.txt, allowing every crawler and pointing at the sitemap

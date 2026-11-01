@@ -83,8 +83,15 @@ export async function buildHTML(site, state, { hashed = true, only } = {}) {
   }))
 
   for (const [i, route] of routes.entries()) {
-    const finished = pages[i]
-    if (writeIfChanged(path.join(site.out, route.output), site.csp ? withCsp(site.csp, finished) : finished)) written++
+    let finished = pages[i]
+    if (site.csp) {
+      try {
+        finished = withCsp(site.csp, finished)
+      } catch (error) {
+        throw new Error(`${route.source}: ${/** @type {Error} */ (error).message}`)
+      }
+    }
+    if (writeIfChanged(path.join(site.out, route.output), finished)) written++
 
     for (const [file, content] of Object.entries(route.props.files ?? {})) {
       if (writeIfChanged(path.join(site.out, file), content)) files++

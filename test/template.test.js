@@ -161,6 +161,21 @@ describe("withCsp", () => {
   it("leaves out JSON-LD and scripts with a src", () => {
     assert.equal(policy("<script type=\"application/ld+json\">{}</script><script src=\"/a.js\"></script>"), "script-src 'self'")
   })
+
+  it("hashes inline styles too", () => {
+    const html = "<meta charset=\"utf-8\"><style>a{}</style>"
+    assert.match(withCsp({ "style-src": "'self'" }, html), /content="style-src 'self' 'sha256-[^']+'"/)
+  })
+
+  it("adds no hashes where the config allows 'unsafe-inline', as they'd turn it off", () => {
+    const html = "<meta charset=\"utf-8\"><script>a()</script><style>a{}</style>"
+    const directives = { "script-src": "'self' 'unsafe-inline'", "style-src": "'self' 'unsafe-inline'" }
+    assert.match(withCsp(directives, html), /content="script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'"/)
+  })
+
+  it("fails on a page without a <meta charset> to put it after", () => {
+    assert.throws(() => withCsp({ "script-src": "'self'" }, "<head><title>x</title></head>"), /needs a <meta charset/)
+  })
 })
 
 describe("renderPage", () => {
@@ -174,6 +189,10 @@ describe("renderPage", () => {
 
   it("fails on a tag it doesn't know", () => {
     assert.throws(() => render("<x-nope/>"), /pages\/x\.html: unknown tag <x-nope>/)
+  })
+
+  it("fails on a tag it can't read, rather than writing it as it is", () => {
+    assert.throws(() => render("<x-js src='/a.js'/>"), /can't read <x-js src='\/a\.js'\/>, its attributes take double quotes/)
   })
 
   it("says which attribute a tag is missing", () => {
