@@ -15,7 +15,8 @@ export function fitDescription(description, max) {
 /**
  * The <title>, description, canonical URL, link preview tags and breadcrumbs for <x-seo title="..." description="..."/>.
  * Optional: image="..." image-alt="..." image-size="WxH" for its own preview image, and section="..." name="..." for its
- * breadcrumb in search results.
+ * breadcrumb in search results. The image is a path on the site, or a full URL for one served from elsewhere, like an
+ * image host of its own.
  * @param {import("./config.js").Site} site
  * @param {import("./routes.js").Route} route
  * @param {Record<string, string | true>} attrs
@@ -74,10 +75,17 @@ export function seoTags(site, route, attrs) {
     : []
 
   const [width, height] = (attr("image-size") ?? "").split("x").map(Number)
+  /**
+   * A preview needs a full URL, a path gets the site's in front and a protocol-relative one gets https.
+   * @param {string} src
+   * @returns {string}
+   */
+  const full = (src) => /^https?:\/\//.test(src) ? src : src.startsWith("//") ? `https:${src}` : `${site.url}${src}`
+  const own = attr("image")
   const image = url && (
-    attr("image")
-      ? { src: `${site.url}${attr("image")}`, width, height, alt: attr("image-alt") ?? "" }
-      : site.seo.image && { ...site.seo.image, src: `${site.url}${escapeHtml(site.seo.image.src)}`, alt: escapeHtml(site.seo.image.alt) }
+    own
+      ? { src: full(own), width, height, alt: attr("image-alt") ?? "" }
+      : site.seo.image && { ...site.seo.image, src: full(escapeHtml(site.seo.image.src)), alt: escapeHtml(site.seo.image.alt) }
   )
   // A wide image shows across the whole preview, a square one as a thumbnail next to the text
   const card = image && image.width > image.height ? "summary_large_image" : "summary"

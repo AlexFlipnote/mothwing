@@ -136,6 +136,17 @@ describe("seoTags", () => {
     assert.ok(tags.includes("<meta property=\"og:image:alt\" content=\"A &quot;moth&quot; as &lt;|&gt;\">"))
     assert.ok(tags.at(-1)?.includes("\"name\":\"Tom & \\\"Jerry\\\"\""), "the breadcrumbs' JSON has it as text")
   })
+
+  it("puts the site in front of an image's path, and leaves a full URL as it is", () => {
+    const site = resolveConfig({ domain: "example.com", seo: {} }, process.cwd())
+    const route = { source: "about.html", output: "about/index.html", url: "/about/", props: {}, sources: [] }
+    /** @param {string} image */
+    const imageOf = (image) => seoTags(site, route, { title: "About", description: "d", image, "image-size": "256x256" })
+      .find((tag) => tag.includes("og:image\""))
+    assert.equal(imageOf("/images/a.jpg"), "<meta property=\"og:image\" content=\"https://example.com/images/a.jpg\">")
+    assert.equal(imageOf("https://img.example.com/a.jpg"), "<meta property=\"og:image\" content=\"https://img.example.com/a.jpg\">")
+    assert.equal(imageOf("//img.example.com/a.jpg"), "<meta property=\"og:image\" content=\"https://img.example.com/a.jpg\">")
+  })
 })
 
 describe("fitDescription", () => {
