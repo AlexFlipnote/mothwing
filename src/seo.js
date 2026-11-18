@@ -16,7 +16,8 @@ export function fitDescription(description, max) {
  * The <title>, description, canonical URL, link preview tags and breadcrumbs for <x-seo title="..." description="..."/>.
  * Optional: image="..." image-alt="..." image-size="WxH" for its own preview image, and section="..." name="..." for its
  * breadcrumb in search results. The image is a path on the site, or a full URL for one served from elsewhere, like an
- * image host of its own.
+ * image host of its own. `noindex` keeps search engines from indexing it, its link preview still works for anyone the
+ * URL is shared with, and the sitemap leaves it out.
  * @param {import("./config.js").Site} site
  * @param {import("./routes.js").Route} route
  * @param {Record<string, string | true>} attrs
@@ -95,7 +96,7 @@ export function seoTags(site, route, attrs) {
     meta("name", "description", description),
     ...url ? [`<link rel="canonical" href="${url}">`] : [],
     // Lets Google show the preview image big, in results and Discover, it otherwise picks a size itself
-    meta("name", "robots", "max-image-preview:large"),
+    meta("name", "robots", attrs.noindex ? "noindex" : "max-image-preview:large"),
     meta("property", "og:locale", locale),
     meta("property", "og:type", "website"),
     ...siteName ? [meta("property", "og:site_name", siteName)] : [],

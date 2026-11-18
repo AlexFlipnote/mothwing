@@ -7,7 +7,7 @@ Paths in tags start at `src/`, the same as the URLs in the build.
 | `<x-js src="/js/index.js"/>` | `<script>` with a `?v=hash` |
 | `<x-js src="/js/app.js" module/>` | One of your `modules`, with a modulepreload for each chunk it imports. `preload="/js/data/moths.js"` adds one for a file it `import()`s later |
 | `<x-css src="/css/index.css"/>` | Stylesheet `<link>` with a `?v=hash` |
-| `<x-seo title="..." description="..."/>` | Title, description, canonical URL, link preview tags. `image`, `image-alt` and `image-size="WxH"` for its own preview, `section` and `name` for breadcrumbs in search results |
+| `<x-seo title="..." description="..."/>` | Title, description, canonical URL, link preview tags. `image`, `image-alt` and `image-size="WxH"` for its own preview, `section` and `name` for breadcrumbs in search results, `noindex` to keep it out of search engines and the sitemap while its URL still works and previews |
 
 ```html
 <!-- src/pages/index.html -->

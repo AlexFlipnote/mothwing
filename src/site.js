@@ -73,7 +73,8 @@ export async function writeSiteFiles(site, routes, dated = true) {
   if (site.sitemap) {
     const dates = dated && site.sitemap.dates ? commitDates(site, routes.flatMap(route => route.sources)) : null
     // With sections, a sitemap per section behind a sitemap index, so Search Console shows how each one is indexed on its own
-    for (const route of routes.filter(route => route.source !== site.notFound)) {
+    // Pages with <x-seo noindex> are left out, a sitemap lists only what search engines may index
+    for (const route of routes.filter(route => route.source !== site.notFound && !route.noindex)) {
       const section = route.url.split("/")[1]
       const name = site.sitemap.sections.includes(section) ? section : "pages"
       const pages = sitemaps.get(name) ?? []

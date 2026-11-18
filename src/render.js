@@ -84,8 +84,11 @@ function coreTags(site, state, from, hashed) {
 
   return {
     "x-seo": ({ attrs, route }) => {
-      onlyAttrs(from, "x-seo", attrs, ["title", "description", "image", "image-alt", "image-size", "section", "name"])
+      onlyAttrs(from, "x-seo", attrs, ["title", "description", "image", "image-alt", "image-size", "section", "name", "noindex"])
+      // On its own, so noindex="{{ page.hidden }}" turns it on and off, a false placeholder takes the attribute away
+      if (typeof attrs.noindex === "string") throw new Error(`${from}: <x-seo noindex> takes no value, write noindex on its own or noindex="{{ ... }}" with a true or false`)
       if (!site.url) state.seoWarnings.add(route.source)
+      route.noindex = Boolean(attrs.noindex)
       return seoTags(site, route, attrs)
     },
     "x-js": ({ attrs }) => {

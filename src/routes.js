@@ -14,6 +14,7 @@ import { lookup } from "./template.js"
  * @property {string} url "/gathering/cedar-log/"
  * @property {Record<string, any>} props Its own values, the data folder's are added when it's rendered
  * @property {string[]} sources Files its content comes from, relative to src, for the sitemap's lastmod
+ * @property {boolean} [noindex] Set once it's rendered, by <x-seo noindex>, to leave it out of the sitemap
  */
 
 /**

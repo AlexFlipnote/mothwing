@@ -76,6 +76,37 @@ describe("no config", () => {
     }
   })
 
+  it("keeps x-seo noindex pages out of search engines and the sitemap", async () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-noindex-"))
+    /** @param {string} attrs */
+    const page = (attrs) => `<!doctype html><html><head><x-seo title="Hi" description="Test"${attrs}/></head><body></body></html>`
+    try {
+      fs.mkdirSync(path.join(dir, "src/pages"), { recursive: true })
+      fs.writeFileSync(path.join(dir, "src/pages/index.html"), page(""))
+      fs.writeFileSync(path.join(dir, "src/pages/secret.html"), page(" noindex"))
+      // A placeholder turns it on and off, as for a page per item that hides some
+      fs.writeFileSync(path.join(dir, "src/pages/shown.html"), page(" noindex=\"{{ hidden }}\""))
+      fs.writeFileSync(path.join(dir, "src/pages/shown.data.js"), "export default () => ({ hidden: false })")
+      const site = { ...resolveConfig({ domain: "example.com", sitemap: { dates: false } }, dir), out: path.join(dir, "dist") }
+      await quietBuild(site)
+      /** @param {string} file */
+      const built = (file) => fs.readFileSync(path.join(dir, "dist", file), "utf8")
+      assert.match(built("secret/index.html"), /<meta name="?robots"? content="?noindex/)
+      assert.match(built("secret/index.html"), /og:title/)
+      assert.match(built("shown/index.html"), /max-image-preview:large/)
+      assert.doesNotMatch(built("shown/index.html"), /noindex/)
+      const sitemap = built("sitemap.xml")
+      assert.ok(!sitemap.includes("/secret/"))
+      assert.ok(sitemap.includes("https://example.com/shown/"))
+      assert.ok(sitemap.includes("https://example.com/</loc>"))
+
+      fs.writeFileSync(path.join(dir, "src/pages/secret.html"), page(" noindex=\"true\""))
+      await assert.rejects(quietBuild(site), /<x-seo noindex> takes no value/)
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true })
+    }
+  })
+
   it("does not warn during dev renders", async () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mothwing-noseo-dev-"))
     try {
